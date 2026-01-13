@@ -112,21 +112,21 @@ Each Cell Unit has the following characteristics:
 
 ```mermaid
 flowchart TB
-    subgraph Frontend["Frontend Layer (MiniBlink)"]
+    subgraph Frontend["Frontend Layer"]
         H["HTML/CSS"]
         J["JavaScript"]
         P["pycmd() Call"]
     end
 
-    Core["Cellium Micro-Kernel (Core)"]
+    Core["Cellium Micro-Kernel"]
     
-    subgraph Backend["Backend Layer (Components)"]
+    subgraph Backend["Backend Layer"]
         C["Calculator"]
         F["FileManager"]
         Custom["Custom Component"]
     end
 
-    Frontend -- pycmd('cell:command:args') --> Core
+    Frontend -->|"pycmd('cell:command:args')"| Core
     Core --> Backend
 ```
 
@@ -142,10 +142,10 @@ flowchart TB
     end
 
     subgraph Kernel["Micro-Kernel Layer"]
-        EB["EventBus<br/>Pub-Sub Event Management"]
-        BR["Bridge<br/>Communication Bridge"]
-        HD["Handler<br/>Command Processing"]
-        DI["DIContainer<br/>Dependency Injection Container"]
+        EB["EventBus"]
+        BR["Bridge"]
+        HD["Handler"]
+        DI["DIContainer"]
     end
 
     subgraph Component["Component Layer"]
@@ -172,20 +172,20 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-    A[User Action] --> B[JavaScript HTML/CSS]
-    B -->|pycmd calculator:calc:1+1| C[MiniBlinkBridge Receives Callback]
-    C --> D[MessageHandler Command Parsing and Routing]
+    A["User Action"] --> B["JavaScript HTML/CSS"]
+    B -->|"pycmd calculator:calc:1+1"| C["MiniBlinkBridge Receives Callback"]
+    C --> D["MessageHandler Command Parsing and Routing"]
     
     D --> E{Processing Mode}
-    E -->|Event Mode| F[EventBus Event]
-    E -->|Direct Call| G[Direct Method Call]
+    E -->|"Event Mode"| F["EventBus Event"]
+    E -->|"Direct Call"| G["Direct Method Call"]
     
-    F --> H[Component Processing]
-    G --> I[Return Result]
-    H --> J[Return Result]
+    F --> H["Component Processing"]
+    G --> I["Return Result"]
+    H --> J["Return Result"]
     
-    J -->|─────→| K[JavaScript Update UI]
-    I -->|─────→| K
+    J -->|"→"| K["JavaScript Update UI"]
+    I -->|"→"| K
 ```
 
 ## Directory Structure
@@ -248,16 +248,16 @@ The micro-kernel is Cellium's core scheduler, responsible for coordinating compo
 ```mermaid
 flowchart TB
     subgraph Kernel["Cellium Micro-Kernel"]
-        EB[EventBus]
-        MH[MessageHandler]
-        DI[DIContainer]
-        MP[Multiprocess]
-        WM[WindowManager]
-        Components[Component Units]
+        EB["EventBus"]
+        MH["MessageHandler"]
+        DI["DIContainer"]
+        MP["Multiprocess"]
+        WM["WindowManager"]
+        Components["Component Units"]
     end
 
-    MH -.->|Scheduling Coordination| EB
-    EB -.->|Event Communication| MH
+    MH -.->|"Scheduling Coordination"| EB
+    EB -.->|"Event Communication"| MH
     
     DI -->|"Dependency Injection"| MH
     MP -->|"Process Management"| MH
