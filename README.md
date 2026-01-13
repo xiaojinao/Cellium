@@ -489,7 +489,7 @@ class MyComponent:
 
 ### 多进程管理 MultiprocessManager
 
-多进程管理器提供安全的代码隔离执行。
+多进程管理器提供安全的代码隔离执行，将耗时任务放到子进程中运行，避免阻塞主进程。
 
 ```python
 from app.core import MultiprocessManager
@@ -498,17 +498,70 @@ mp_manager = MultiprocessManager()
 result = mp_manager.submit(heavy_function, "input_data")
 ```
 
+#### 为什么需要多进程
+
+Python 的 GIL（全局解释器锁）限制了多线程的并行执行能力。对于 CPU 密集型任务，多进程可以充分利用多核 CPU，提高执行效率。同时，多进程提供进程隔离，一个进程崩溃不会影响其他进程。
+
 #### 核心方法
 
-| 方法 | 说明 |
-|------|------|
-| `submit(func, *args, **kwargs)` | 同步提交任务，返回结果 |
-| `submit_async(func, *args, **kwargs)` | 异步提交任务，返回 Future |
-| `map(func, args_list)` | 同步批量执行 |
-| `map_async(func, args_list)` | 异步批量执行 |
-| `shutdown(wait=True)` | 关闭进程池 |
-| `is_enabled()` | 检查是否启用 |
-| `set_enabled(enabled)` | 设置启用状态 |
+| 方法 | 说明 | 返回值 |
+|------|------|--------|
+| `submit(func, *args, **kwargs)` | 同步提交任务，阻塞等待结果 | 任务返回值 |
+| `submit_async(func, *args, **kwargs)` | 异步提交任务，立即返回 Future | Future 对象 |
+| `map(func, args_list)` | 同步批量执行多个任务 | 结果列表 |
+| `map_async(func, args_list)` | 异步批量执行多个任务 | Future 列表 |
+| `shutdown(wait=True)` | 关闭进程池 | 无 |
+| `is_enabled()` | 检查是否启用多进程 | bool |
+| `set_enabled(enabled)` | 设置启用状态 | 无 |
+
+#### 使用示例
+
+**同步执行：**
+
+```python
+from app.core import MultiprocessManager
+
+mp_manager = MultiprocessManager()
+
+def calculate_fibonacci(n):
+    if n <= 1:
+        return n
+    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)
+
+# 同步执行，阻塞等待结果
+result = mp_manager.submit(calculate_fibonacci, 30)
+print(result)  # 832040
+```
+
+**异步执行：**
+
+```python
+import asyncio
+from app.core import get_multiprocess_manager
+
+async def async_calculation():
+    mp_manager = get_multiprocess_manager()
+    future = mp_manager.submit_async(calculate_fibonacci, 30)
+    result = await asyncio.wrap_future(future)
+    return result
+
+result = asyncio.run(async_calculation())
+```
+
+**批量执行：**
+
+```python
+from app.core import get_multiprocess_manager
+
+mp_manager = get_multiprocess_manager()
+
+# 同步批量执行
+results = mp_manager.map(
+    calculate_fibonacci,
+    [20, 25, 30, 35, 40]
+)
+print(results)  # [6765, 75025, 832040, 9227465, 102334155]
+```
 
 #### 辅助函数
 
@@ -517,6 +570,74 @@ result = mp_manager.submit(heavy_function, "input_data")
 | `run_in_process(func)` | 装饰器，函数在子进程执行 |
 | `run_in_process_async(func)` | 装饰器，函数在子进程异步执行 |
 | `get_multiprocess_manager()` | 获取全局 MultiprocessManager 实例 |
+
+**装饰器用法：**
+
+```python
+from app.core.util.mp_manager import run_in_process, run_in_process_async
+
+# 同步执行装饰器
+@run_in_process
+def heavy_computation(data):
+    # 耗时计算
+    result = sum(i*i for i in range(10000000))
+    return result
+
+# 直接调用，会在子进程执行
+result = heavy_computation("data")
+```
+
+#### 在组件中使用
+
+组件可以通过依赖注入获取 MultiprocessManager：
+
+```python
+from app.core.interface.icell import ICell
+from app.core.di.container import injected
+
+class DataProcessor(ICell):
+    mp_manager = injected("MultiprocessManager")
+    
+    @property
+    def cell_name(self) -> str:
+        return "dataprocessor"
+    
+    def execute(self, command: str, *args, **kwargs):
+        if command == "process":
+            data = args[0] if args else ""
+            # 在子进程执行耗时操作
+            result = self.mp_manager.submit(self._heavy_process, data)
+            return result
+        return f"Unknown command: {command}"
+    
+    def _heavy_process(self, data: str) -> str:
+        """耗时处理逻辑"""
+        import time
+        time.sleep(2)  # 模拟耗时操作
+        return f"Processed: {data.upper()}"
+```
+
+#### 配置与限制
+
+```python
+from app.core import get_multiprocess_manager
+
+mp_manager = get_multiprocess_manager()
+
+# 禁用多进程（回退到单进程执行）
+mp_manager.set_enabled(False)
+
+# 检查是否启用
+if mp_manager.is_enabled():
+    print("多进程已启用")
+```
+
+#### 注意事项
+
+1. **进程间通信**：进程间数据传递需要序列化（pickle），避免传递不可序列化对象
+2. **资源限制**：进程池大小默认为 CPU 核心数，可根据任务类型调整
+3. **生命周期**：进程池在程序退出时自动关闭，也可手动调用 `shutdown()`
+4. **异常处理**：子进程中的异常会传递到主进程，使用 `try/except` 捕获
 
 ### 消息处理器 MessageHandler
 
