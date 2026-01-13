@@ -1,6 +1,11 @@
 # Cellium 组件开发教程
 
-[English](component-tutorial.en.md) | [返回主文档](../) | [English Main](../)
+[中文](index.md)|[English](index.en.md)
+
+## 教程
+
+- [组件开发教程](component-tutorial.en.md) | [组件开发教程（中文）](component-tutorial.md)
+- [多进程教程](multiprocessing-tutorial.en.md) | [多进程教程（中文）](multiprocessing-tutorial.md)
 
 > **"在 Cellium 中，写一个功能模块就像写一个简单的 Python 函数一样自然，而剩下的复杂通信，交给微内核。"**
 

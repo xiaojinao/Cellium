@@ -1,6 +1,11 @@
 # Cellium 多进程教程
 
-[English](multiprocessing-tutorial.en.md) | [返回主文档](../) | [English Main](../)
+[中文](index.md)|[English](index.en.md)
+
+## 教程
+
+- [组件开发教程](component-tutorial.en.md) | [组件开发教程（中文）](component-tutorial.md)
+- [多进程教程](multiprocessing-tutorial.en.md) | [多进程教程（中文）](multiprocessing-tutorial.md)
 
 > **"CPU 有多个核心，为什么只用一个？让耗时任务在后台悄悄完成，不阻塞主界面。"**
 

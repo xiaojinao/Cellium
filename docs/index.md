@@ -1,6 +1,6 @@
 # Cellium
 
-[中文](index.zh.md)
+[English](index.en.md)
 
 ## 教程
 
