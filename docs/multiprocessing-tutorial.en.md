@@ -1,6 +1,6 @@
 # Cellium Multiprocessing Tutorial
 
-[中文](multiprocessing-tutorial.md) | [Back to Main](../README.md) | [中文主文档](../README.md)
+[中文](multiprocessing-tutorial.md) | [Back to Main](https://github.com/xiaojinao/Cellium/blob/main/README.md) | [中文主文档](https://github.com/xiaojinao/Cellium/blob/main/README.md)
 
 > **"Your CPU has multiple cores, why use only one? Let time-consuming tasks run in the background without blocking the UI."**
 
