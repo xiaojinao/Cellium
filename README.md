@@ -1,7 +1,7 @@
 [English](README.en.md) | [教程](docs/component-tutorial.md) | [English Tutorial](docs/component-tutorial.en.md)
 
 <p align="center">
-  <img src="logo.png" alt="Cellium Logo" width="200">
+  <img src="logo.png" alt="Cellium Logo" width="400">
 </p>
 
 # Cellium

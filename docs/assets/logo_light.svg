@@ -1,0 +1,51 @@
+<svg width="800" height="800" viewBox="0 0 200 200"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <!-- 细胞核渐变 -->
+    <radialGradient id="cellCore" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#8CFFD1"/>
+      <stop offset="100%" stop-color="#00FF85"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 细胞膜填充 -->
+  <path d="M100 20 L170 60 L170 140 L100 180 L30 140 L30 60 Z"
+        fill="rgba(0,163,255,0.08)"/>
+
+  <!-- 外层细胞膜 -->
+  <path d="M100 20 L170 60 L170 140 L100 180 L30 140 L30 60 Z"
+        fill="none"
+        stroke="rgba(0,163,255,0.7)"
+        stroke-width="8"
+        stroke-linejoin="round"/>
+
+  <!-- 内层膜 -->
+  <path d="M100 26 L164 62 L164 138 L100 174 L36 138 L36 62 Z"
+        fill="none"
+        stroke="rgba(0,163,255,0.35)"
+        stroke-width="3"
+        stroke-linejoin="round"/>
+
+  <!-- 细胞核 -->
+  <circle cx="100" cy="100" r="30"
+          fill="url(#cellCore)"
+          opacity="0.9"/>
+
+  <!-- 胞内结构（保持方向，变柔和） -->
+  <line x1="100" y1="100" x2="100" y2="45"
+        stroke="rgba(0,163,255,0.55)"
+        stroke-width="3"
+        stroke-linecap="round"/>
+
+  <line x1="100" y1="100" x2="150" y2="125"
+        stroke="rgba(0,163,255,0.5)"
+        stroke-width="3"
+        stroke-linecap="round"/>
+
+  <line x1="100" y1="100" x2="50" y2="125"
+        stroke="rgba(0,163,255,0.5)"
+        stroke-width="3"
+        stroke-linecap="round"/>
+
+</svg>
