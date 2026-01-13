@@ -370,3 +370,19 @@ pycmd('greeter:greet:Alice:Hello')
 | `index.html` | 前端页面（需修改或新建） |
 
 通过本教程，你已经掌握了 Cellium 组件开发的基本流程。类似的，你可以创建任意功能的组件，只需继承 `ICell` 接口并实现三个核心方法即可。
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  // 初始化，并将所有 class 为 language-mermaid 的 pre 标签渲染为图表
+  mermaid.initialize({ startOnLoad: true });
+  
+  // 针对 Jekyll 的兼容处理：Jekyll 默认生成的代码块 class 是 language-mermaid
+  window.addEventListener('load', () => {
+    const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
+    codeBlocks.forEach(codeBlock => {
+      const pre = codeBlock.parentElement;
+      pre.classList.add('mermaid');
+      pre.textContent = codeBlock.textContent;
+    });
+  });
+</script>
