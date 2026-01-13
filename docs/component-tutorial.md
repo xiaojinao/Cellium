@@ -98,11 +98,11 @@ class Greeter(ICell):
 
 ```mermaid
 flowchart LR
-    A[前端 pycmd<br/>pycmd('greeter:greet:你好')] --> B[MessageHandler<br/>解析命令]
-    B --> C[找到 greeter 组件]
-    C --> D[调用 execute<br/>execute('greet', '你好')]
-    D --> E[执行 _cmd_greet<br/>返回结果]
-    E --> F["返回<br/>'你好 Hallo Cellium'"]
+    A["前端 pycmd<br>pycmd('greeter:greet:你好')"] --> B["MessageHandler<br>解析命令"]
+    B --> C["找到 greeter 组件"]
+    C --> D["调用 execute<br>execute('greet', '你好')"]
+    D --> E["执行 _cmd_greet<br>返回结果"]
+    E --> F["返回<br>'你好 Hallo Cellium'"]
 ```
 
 > 💡 **细胞生命周期提示**：虽然 Greeter 很简单，但由于它继承自 `ICell`，它已经自动获得了框架注入的 `self.logger` 和 `self.bus`。你可以在命令方法里直接使用：

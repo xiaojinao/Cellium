@@ -98,11 +98,11 @@ Execution Flow:
 
 ```mermaid
 flowchart LR
-    A[Frontend pycmd<br/>pycmd('greeter:greet:Hello')] --> B[MessageHandler<br/>Parse Command]
-    B --> C[Find greeter Component]
-    C --> D[Call execute<br/>execute('greet', 'Hello')]
-    D --> E[Execute _cmd_greet<br/>Return Result]
-    E --> F["Return<br/>'Hello Hallo Cellium'"]
+    A["Frontend pycmd<br>pycmd('greeter:greet:Hello')"] --> B["MessageHandler<br>Parse Command"]
+    B --> C["Find greeter Component"]
+    C --> D["Call execute<br>execute('greet', 'Hello')"]
+    D --> E["Execute _cmd_greet<br>Return Result"]
+    E --> F["Return<br>'Hello Hallo Cellium'"]
 ```
 
 > 💡 **Cell Lifecycle Note**: Although Greeter is simple, since it inherits from `ICell`, it automatically has framework-injected `self.logger` and `self.bus`. You can use them directly in command methods:
