@@ -1,8 +1,41 @@
 # Cellium
 
-一套基于"核心驱动-模块解耦"理念的 Python 桌面应用框架。
+**Python + HTML/JS 的桌面应用框架。**
+
+基于"核心驱动-模块解耦"理念的 Python 桌面应用框架。
 
 通过一个精密的微内核（Core）作为调度中枢，实现了前端交互与后端逻辑的彻底分离。开发者只需将功能封装为独立的"细胞单元"，其余的跨模块通信、并发调度与资源管理均由 Cellium 核心透明完成，让复杂的系统构建变得像拼图一样简单。
+
+| 特点 | 说明 |
+|------|------|
+| **核心驱动** | 微内核统一调度，开发者只需关注业务逻辑 |
+| **模块解耦** | 前后端独立开发，通过协议通信 |
+| **简单** | 只需写 Python 函数定义功能，前端调用即可 |
+| **灵活** | 完整 Web 前端生态，任意 UI 框架 |
+| **轻量** | 基于 MiniBlink，体积小、启动快 |
+
+**对比传统方案：**
+
+| 方案 | 学习成本 | 开发效率 | UI 灵活性 |
+|------|---------|---------|----------|
+| PyQt/Tkinter | 高 | 中 | 低 |
+| Electron | 中 | 高 | 高 |
+| **Cellium** | **低** | **高** | **高** |
+
+**快速示例：**
+```python
+# app/components/greeter.py
+class Greeter(ICell):
+    def _cmd_greet(self, text: str = "") -> str:
+        return f"{text} Hallo Cellium"
+```
+
+```html
+<!-- html/index.html -->
+<button onclick="pycmd('greeter:greet:你好')">问候</button>
+```
+
+选择 Cellium：**用你熟悉的 Python 和 Web 技术，快速构建桌面应用。**
 
 ## MiniBlink 依赖
 
@@ -29,6 +62,7 @@ python-miniblink/
 
 ## 目录
 
+- [文档](docs/component-tutorial.md)
 - [MiniBlink 依赖](#miniblink-依赖)
 - [核心理念](#核心理念)
 - [架构设计](#架构设计)
