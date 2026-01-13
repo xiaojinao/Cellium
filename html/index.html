@@ -521,6 +521,8 @@
             });
 
             document.getElementById('btn-decimal').addEventListener('click', function(e) {
+                e.stopPropagation();  // 阻止事件冒泡
+                e.preventDefault();   // 阻止默认行为
                 appendToCalc('.');
                 window.lastClickedElement = this.id;
             });

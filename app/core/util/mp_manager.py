@@ -14,6 +14,28 @@ import traceback
 
 logger = logging.getLogger(__name__)
 
+_worker_initializers: list[Callable] = []
+_worker_initialized = False
+
+
+def _worker_init():
+    """工作进程初始化（在每个子进程启动时调用）"""
+    global _worker_initialized
+    if _worker_initialized:
+        return
+    
+    logger.info("[MP] 工作进程初始化开始")
+    
+    for init_func in _worker_initializers:
+        try:
+            init_func()
+            logger.debug(f"[MP] 初始化函数 {init_func.__name__} 执行成功")
+        except Exception as e:
+            logger.error(f"[MP] 初始化函数 {init_func.__name__} 执行失败: {e}")
+    
+    _worker_initialized = True
+    logger.info("[MP] 工作进程初始化完成")
+
 
 class MultiprocessManager:
     """多进程管理器（单例模式）"""
@@ -42,7 +64,8 @@ class MultiprocessManager:
             return None
         if self._executor is None:
             self._executor = ProcessPoolExecutor(
-                max_workers=multiprocessing.cpu_count()
+                max_workers=multiprocessing.cpu_count(),
+                initializer=_worker_init
             )
             logger.info(f"进程池已启动，使用 {multiprocessing.cpu_count()} 个工作进程")
         return self._executor
@@ -59,14 +82,15 @@ class MultiprocessManager:
     
     def submit(self, func: Callable, *args, **kwargs) -> Any:
         """提交任务（同步）"""
-        if not self._enabled or self._executor is None:
+        if not self._enabled:
             return func(*args, **kwargs)
         
+        executor = self.executor
         try:
-            future: Future = self._executor.submit(func, *args, **kwargs)
+            future: Future = executor.submit(func, *args, **kwargs)
             return future.result()
-        except Exception as e:
-            self._reraise_with_traceback(e)
+        except Exception:
+            raise
     
     def submit_async(self, func: Callable, *args, **kwargs) -> Future:
         """提交任务（异步，返回 Future）"""
@@ -100,12 +124,22 @@ class MultiprocessManager:
             self._executor = None
             logger.info("进程池已关闭")
     
-    def _reraise_with_traceback(self, error: Exception) -> None:
-        """重新抛出异常，保留堆栈跟踪"""
-        exc_type, exc_value, exc_tb = sys.exc_info()
-        if hasattr(exc_value, '__cause__') and exc_value.__cause__:
-            raise exc_value.__cause__
-        raise error
+    def register_initializer(self, init_func: Callable):
+        """注册工作进程初始化函数
+        
+        Args:
+            init_func: 初始化函数，将在每个子进程启动时调用
+        """
+        global _worker_initializers
+        if init_func not in _worker_initializers:
+            _worker_initializers.append(init_func)
+            logger.info(f"[MP] 已注册初始化函数: {init_func.__name__}")
+    
+    def clear_initializers(self):
+        """清除所有工作进程初始化函数"""
+        global _worker_initializers
+        _worker_initializers.clear()
+        logger.info("[MP] 已清除所有初始化函数")
 
 
 _manager = MultiprocessManager()
@@ -131,21 +165,26 @@ def run_in_process_async(func: Callable) -> Callable:
         
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
-            None, 
+            _manager.executor, 
             lambda: func(*args, **kwargs)
         )
     
     return wrapper
 
 
-def _setup_worker():
-    """工作进程初始化"""
-    if hasattr(sys.stdout):
-        sys.stdout.reconfigure(line_buffering=True)
-    if hasattr(sys.stderr):
-        sys.stderr.reconfigure(line_buffering=True)
-
-
 def get_multiprocess_manager() -> MultiprocessManager:
     """获取全局多进程管理器"""
     return _manager
+
+
+def worker_initializer(init_func: Callable) -> Callable:
+    """装饰器：注册工作进程初始化函数
+    
+    使用方式:
+        @worker_initializer
+        def init_database():
+            global db_connection
+            db_connection = create_connection()
+    """
+    _manager.register_initializer(init_func)
+    return init_func
