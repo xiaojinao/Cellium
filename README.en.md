@@ -1,6 +1,8 @@
-# Cellium
-
 [中文](README.md) | [Tutorial](docs/component-tutorial.md) | [中文教程](docs/component-tutorial.md)
+
+![Cellium Logo](logo.png)
+
+# Cellium
 
 **Python + HTML/JS Desktop Application Framework.**
 

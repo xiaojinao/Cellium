@@ -1,6 +1,8 @@
-# Cellium
-
 [English](README.en.md) | [教程](docs/component-tutorial.md) | [English Tutorial](docs/component-tutorial.en.md)
+
+![Cellium Logo](logo.png)
+
+# Cellium
 
 **Python + HTML/JS 的桌面应用框架。**
 
