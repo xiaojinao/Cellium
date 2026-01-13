@@ -1,0 +1,12 @@
+# Python MiniBlink - 依赖包
+
+# 打包工具
+nuitka>=1.8.0
+
+# 配置文件解析
+pyyaml>=6.0
+
+# 注意：其他功能使用 Python 标准库，无需额外依赖
+# - ctypes: Windows API 调用
+# - os, sys: 文件和系统操作
+# - time, threading: 时间和线程管理

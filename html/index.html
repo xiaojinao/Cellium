@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Python MiniBlink</title>
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            font-style: normal;
+            font-weight: 300;
+            font-display: swap;
+            src: url('../font/Roboto-Light.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Roboto';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('../font/Roboto-Regular.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Roboto';
+            font-style: normal;
+            font-weight: 500;
+            font-display: swap;
+            src: url('../font/Roboto-Medium.woff2') format('woff2');
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .titlebar {
+            -webkit-app-region: drag;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+
+        .titlebar-title {
+            color: #202124;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+
+        .titlebar-controls {
+            -webkit-app-region: no-drag;
+            display: flex;
+            height: 100%;
+            margin-right: -8px;
+        }
+
+        .titlebar-btn {
+            width: 46px;
+            height: 100%;
+            border: none;
+            background: transparent;
+            color: #5f6368;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            border-radius: 8px;
+            margin-right: 4px;
+        }
+
+        .titlebar-btn:hover {
+            background: rgba(95, 99, 104, 0.08);
+        }
+
+        .titlebar-btn.close:hover {
+            background: rgba(217, 48, 37, 0.1);
+            color: #d93025;
+        }
+
+        .titlebar-btn svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+
+        .titlebar-btn:hover svg {
+            opacity: 1;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .calculator {
+            background: rgba(255, 255, 255, 0.5);
+            width: 320px;
+            flex-shrink: 0;
+            padding: 16px;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        #calc-display {
+            width: 100%;
+            height: 80px;
+            border: none;
+            background: transparent;
+            color: #202124;
+            font-size: 48px;
+            font-weight: 300;
+            text-align: right;
+            padding: 10px;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .calc-btn {
+            height: 60px;
+            width: 60px;
+            border: none;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .calc-btn:active {
+            transform: scale(0.95);
+        }
+
+        .calc-btn-num {
+            background: rgba(255, 255, 255, 0.6);
+            color: #3c4043;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .calc-btn-num:hover {
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+        }
+
+        .calc-btn-op {
+            background: rgba(232, 240, 254, 0.6);
+            color: #1a73e8;
+            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.1), inset 0 0 0 1px rgba(26, 115, 232, 0.2);
+        }
+
+        .calc-btn-op:hover {
+            background: rgba(232, 240, 254, 0.85);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2), inset 0 0 0 1px rgba(26, 115, 232, 0.4);
+        }
+
+        .calc-btn-equals {
+            background: rgba(26, 115, 232, 0.7);
+            color: white;
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .calc-btn-equals:hover {
+            background: rgba(26, 115, 232, 0.9);
+            box-shadow: 0 6px 16px rgba(26, 115, 232, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+        }
+
+        .calc-btn-clear {
+            background: rgba(252, 232, 230, 0.6);
+            color: #d93025;
+            box-shadow: 0 2px 8px rgba(217, 48, 37, 0.1), inset 0 0 0 1px rgba(217, 48, 37, 0.2);
+        }
+
+        .calc-btn-clear:hover {
+            background: rgba(252, 232, 230, 0.85);
+            box-shadow: 0 4px 12px rgba(217, 48, 37, 0.2), inset 0 0 0 1px rgba(217, 48, 37, 0.4);
+        }
+
+        .calc-btn-backspace {
+            background: rgba(232, 240, 254, 0.6);
+            color: #1a73e8;
+            font-size: 20px;
+            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.1), inset 0 0 0 1px rgba(26, 115, 232, 0.2);
+        }
+
+        .calc-btn-backspace:hover {
+            background: rgba(232, 240, 254, 0.85);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2), inset 0 0 0 1px rgba(26, 115, 232, 0.4);
+        }
+
+        #event-log {
+            width: 320px;
+            flex-shrink: 0;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 12px;
+            color: #70757a;
+            border: 1px solid rgba(224, 224, 224, 0.5);
+            overflow-y: auto;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px dotted #eee;
+            font-family: monospace;
+        }
+
+        .greeter-section {
+            width: 320px;
+            flex-shrink: 0;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        .greeter-section h3 {
+            color: #5f6368;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .greeter-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(224, 224, 224, 0.5);
+            border-radius: 8px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.6);
+            color: #3c4043;
+            outline: none;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .greeter-input:focus {
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.15);
+            border-color: rgba(26, 115, 232, 0.5);
+        }
+
+        .greeter-input::placeholder {
+            color: #9aa0a6;
+        }
+
+        .greeter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .greeter-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .greeter-btn:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+
+        .greeter-btn-primary {
+            background: rgba(26, 115, 232, 0.7);
+            color: white;
+            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .greeter-btn-secondary {
+            background: rgba(95, 99, 104, 0.7);
+            color: white;
+            box-shadow: 0 2px 8px rgba(95, 99, 104, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .greeter-result {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #202124;
+            min-height: 20px;
+            border: 1px solid rgba(224, 224, 224, 0.5);
+        }
+
+        .greeter-result-label {
+            font-size: 11px;
+            color: #5f6368;
+            margin-bottom: 4px;
+        }
+
+        @media (min-width: 1200px) {
+            .calculator, .greeter-section {
+                width: 360px;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                flex-direction: column;
+                padding: 10px;
+                gap: 15px;
+            }
+            
+            .calculator, .greeter-section, #event-log {
+                width: 100%;
+                padding: 12px;
+            }
+            
+            #calc-display {
+                font-size: 36px;
+                height: 60px;
+            }
+            
+            .calc-btn {
+                height: 50px;
+                width: 50px;
+                font-size: 16px;
+            }
+            
+            .calc-buttons {
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="titlebar">
+        <span class="titlebar-title">计算器</span>
+        <div class="titlebar-controls">
+            <button class="titlebar-btn" id="btn-minimize" title="最小化">
+                <svg viewBox="0 0 12 12"><rect y="5" width="12" height="2" fill="currentColor"/></svg>
+            </button>
+            <button class="titlebar-btn" id="btn-maximize" title="最大化">
+                <svg viewBox="0 0 12 12"><path d="M2,2 H10 V10 H2 Z M1,1 V11 H11 V1 H1 Z" fill="currentColor"/></svg>
+            </button>
+            <button class="titlebar-btn close" id="btn-close" title="关闭">
+                <svg viewBox="0 0 12 12"><path d="M1,1 L11,11 M11,1 L1,11" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="calculator">
+            <input type="text" id="calc-display" readonly value="0">
+            <div class="calc-buttons">
+                <button class="calc-btn calc-btn-clear" id="btn-clear">C</button>
+                <button class="calc-btn calc-btn-op" id="btn-divide">÷</button>
+                <button class="calc-btn calc-btn-op" id="btn-multiply">×</button>
+                <button class="calc-btn calc-btn-backspace" id="btn-backspace">⌫</button>
+
+                <button class="calc-btn calc-btn-num" id="btn-7">7</button>
+                <button class="calc-btn calc-btn-num" id="btn-8">8</button>
+                <button class="calc-btn calc-btn-num" id="btn-9">9</button>
+                <button class="calc-btn calc-btn-op" id="btn-minus">−</button>
+
+                <button class="calc-btn calc-btn-num" id="btn-4">4</button>
+                <button class="calc-btn calc-btn-num" id="btn-5">5</button>
+                <button class="calc-btn calc-btn-num" id="btn-6">6</button>
+                <button class="calc-btn calc-btn-op" id="btn-plus">+</button>
+
+                <button class="calc-btn calc-btn-num" id="btn-1">1</button>
+                <button class="calc-btn calc-btn-num" id="btn-2">2</button>
+                <button class="calc-btn calc-btn-num" id="btn-3">3</button>
+                <button class="calc-btn calc-btn-equals" id="btn-equals" style="grid-row: span 2;">=</button>
+
+                <button class="calc-btn calc-btn-num" id="btn-0" style="grid-column: span 2;">0</button>
+                <button class="calc-btn calc-btn-num" id="btn-decimal">.</button>
+            </div>
+        </div>
+
+        <div class="greeter-section">
+            <h3>Greeter 组件演示</h3>
+            <input type="text" class="greeter-input" id="greeter-input" placeholder="输入你想说的话...">
+            <div class="greeter-buttons">
+                <button class="greeter-btn greeter-btn-primary" id="btn-greeter-greet">问候</button>
+                <button class="greeter-btn greeter-btn-secondary" id="btn-greeter-reverse">反转问候</button>
+            </div>
+            <div class="greeter-result-label">结果：</div>
+            <div class="greeter-result" id="greeter-result">等待输入...</div>
+        </div>
+
+        <div id="event-log">
+            <div class="log-entry">准备就绪...</div>
+        </div>
+    </div>
+
+    <script>
+        window.lastClickedElement = null;
+        let calcExpression = '';
+
+        function logEvent(message) {
+            const log = document.getElementById('event-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            log.insertBefore(entry, log.firstChild);
+            if (log.children.length > 8) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        function updateCalcDisplay() {
+            document.getElementById('calc-display').value = calcExpression || '0';
+        }
+
+        function appendToCalc(value) {
+            calcExpression += value;
+            updateCalcDisplay();
+        }
+
+        function clearCalc() {
+            calcExpression = '';
+            updateCalcDisplay();
+        }
+
+        function backspaceCalc() {
+            calcExpression = calcExpression.slice(0, -1);
+            updateCalcDisplay();
+        }
+
+        function calculateWithPython() {
+            if (!calcExpression) return;
+
+            logEvent('发送给 Python: ' + calcExpression);
+
+            try {
+                window.mbQuery(0, 'calc:' + calcExpression, function(customMsg, response) {
+                    logEvent('Python 返回结果: ' + response);
+                    document.getElementById('calc-display').value = response;
+                });
+            } catch(e) {
+                logEvent('错误: ' + e);
+            }
+
+            calcExpression = '';
+        }
+
+        function setupCalculatorButtons() {
+            document.querySelectorAll('.calc-btn-num').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    const value = this.textContent;
+                    appendToCalc(value);
+                    window.lastClickedElement = this.id;
+                });
+            });
+
+            document.getElementById('btn-clear').addEventListener('click', function(e) {
+                clearCalc();
+                window.lastClickedElement = this.id;
+            });
+
+            document.getElementById('btn-backspace').addEventListener('click', function(e) {
+                backspaceCalc();
+                window.lastClickedElement = this.id;
+            });
+
+            ['btn-plus', 'btn-minus', 'btn-multiply', 'btn-divide'].forEach(id => {
+                document.getElementById(id).addEventListener('click', function(e) {
+                    const opMap = {'btn-plus': '+', 'btn-minus': '-', 'btn-multiply': '*', 'btn-divide': '/'};
+                    appendToCalc(opMap[this.id]);
+                    window.lastClickedElement = this.id;
+                });
+            });
+
+            document.getElementById('btn-equals').addEventListener('click', function(e) {
+                calculateWithPython();
+                window.lastClickedElement = this.id;
+            });
+
+            document.getElementById('btn-decimal').addEventListener('click', function(e) {
+                appendToCalc('.');
+                window.lastClickedElement = this.id;
+            });
+        }
+
+        function setupTitlebarButtons() {
+            document.getElementById('btn-minimize').addEventListener('click', function() {
+                window.mbQuery(0, 'syscmd:minimize', function() {});
+            });
+
+            document.getElementById('btn-maximize').addEventListener('click', function() {
+                window.mbQuery(0, 'syscmd:maximize', function() {});
+            });
+
+            document.getElementById('btn-close').addEventListener('click', function() {
+                window.mbQuery(0, 'syscmd:close', function() {});
+            });
+        }
+
+        function setupGreeterButtons() {
+            document.getElementById('btn-greeter-greet').addEventListener('click', function() {
+                const input = document.getElementById('greeter-input');
+                const result = document.getElementById('greeter-result');
+                const text = input.value.trim();
+                
+                if (!text) {
+                    result.textContent = '请输入文字！';
+                    return;
+                }
+                
+                logEvent('Greeter: 发送问候 "' + text + '"');
+                
+                try {
+                    window.mbQuery(0, 'greeter:greet:' + text, function(customMsg, response) {
+                        result.textContent = response;
+                        logEvent('Greeter 返回: ' + response);
+                    });
+                } catch(e) {
+                    result.textContent = '错误: ' + e;
+                    logEvent('Greeter 错误: ' + e);
+                }
+            });
+
+            document.getElementById('btn-greeter-reverse').addEventListener('click', function() {
+                const input = document.getElementById('greeter-input');
+                const result = document.getElementById('greeter-result');
+                const text = input.value.trim();
+                
+                if (!text) {
+                    result.textContent = '请输入文字！';
+                    return;
+                }
+                
+                logEvent('Greeter: 发送反转问候 "' + text + '"');
+                
+                try {
+                    window.mbQuery(0, 'greeter:reverse:' + text, function(customMsg, response) {
+                        result.textContent = response;
+                        logEvent('Greeter 返回: ' + response);
+                    });
+                } catch(e) {
+                    result.textContent = '错误: ' + e;
+                    logEvent('Greeter 错误: ' + e);
+                }
+            });
+
+            document.getElementById('greeter-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('btn-greeter-greet').click();
+                }
+            });
+        }
+
+        const originalAlert = window.alert;
+        window.alert = function(message) {
+            if (typeof message === 'string' && message.startsWith('__CALC_RESULT__:')) {
+                const result = message.substring(16);
+                window.pyCalcResult = result;
+                logEvent('Result from Python: ' + result);
+            } else {
+                originalAlert(message);
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setupCalculatorButtons();
+                setupTitlebarButtons();
+                setupGreeterButtons();
+            });
+        } else {
+            setupCalculatorButtons();
+            setupTitlebarButtons();
+            setupGreeterButtons();
+        }
+
+        console.log('计算器已加载');
+    </script>
+</body>
+</html>

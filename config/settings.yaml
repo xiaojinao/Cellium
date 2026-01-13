@@ -1,0 +1,5 @@
+# 组件配置
+# enabled_components: 启用的组件列表（注释掉的不加载）
+enabled_components:
+  - app.components.calculator.Calculator
+  - app.components.greeter.Greeter
