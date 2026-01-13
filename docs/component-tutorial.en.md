@@ -1,6 +1,6 @@
 # Cellium Component Development Tutorial
 
-[中文](component-tutorial.md) | [Back to Main](https://github.com/xiaojinao/Cellium/blob/main/README.md) | [中文主文档](https://github.com/xiaojinao/Cellium/blob/main/README.md)
+[中文](component-tutorial.md) | [Back to Main](../) | [中文主文档](../)
 
 > **"In Cellium, writing a feature module is as natural as writing a simple Python function, and the complex communication is handled by the microkernel."**
 
