@@ -136,21 +136,21 @@ Cellium 的设计遵循"核心驱动-模块解耦"的核心哲学，将复杂系
 
 ```mermaid
 flowchart TB
-    subgraph Frontend["前端层 (MiniBlink)"]
+    subgraph Frontend["Frontend - MiniBlink"]
         H["HTML/CSS"]
         J["JavaScript"]
-        MB["window.mbQuery() 调用"]
+        MB["window.mbQuery()"]
     end
 
-    Core["Cellium 微内核 (Core)"]
-    
-    subgraph Backend["后端层 (Components)"]
+    Core["Cellium Core"]
+
+    subgraph Backend["Backend - Components"]
         C["Calculator"]
         F["FileManager"]
-        Custom["自定义组件"]
+        Custom["Custom"]
     end
 
-    Frontend -->|window.mbQuery(0, 'cell:command:args')"| Core
+    Frontend -->|"mbQuery()"| Core
     Core --> Backend
 ```
 
@@ -158,30 +158,30 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph Presentation["前端交互层"]
+    subgraph Presentation["Presentation Layer"]
         MW["MainWindow"]
-        MW -->|"窗口管理"| MW
-        MW -->|"事件订阅"| MW
-        MW -->|"UI 渲染"| MW
+        MW -->|"Window Mgmt"| MW
+        MW -->|"Event Subscribe"| MW
+        MW -->|"UI Render"| MW
     end
 
-    subgraph Kernel["微内核层"]
+    subgraph Kernel["Kernel Layer"]
         EB["EventBus"]
         BR["Bridge"]
         HD["Handler"]
         DI["DIContainer"]
     end
 
-    subgraph Component["组件层"]
+    subgraph Component["Component Layer"]
         Calc["Calculator"]
         FM["FileManager"]
-        Custom["自定义组件"]
+        Custom["Custom"]
     end
 
-    Presentation -->|"前端交互"| Kernel
-    Kernel -->|"事件通信"| Component
-    HD <-->|"消息处理"| DI
-    BR <-->|"桥接通信"| EB
+    Presentation -->|"Frontend Interaction"| Kernel
+    Kernel -->|"Event Communication"| Component
+    HD <-->|"Message Handling"| DI
+    BR <-->|"Bridge Communication"| EB
 ```
 
 ### 设计原则
@@ -196,19 +196,19 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-    A["用户操作"] --> B["JavaScript HTML/CSS"]
-    B -->|window.mbQuery(0, 'calculator:calc:1+1')| C["MiniBlinkBridge 接收回调"]
-    C --> D["MessageHandler 命令解析与路由"]
-    
-    D --> E{处理方式}
-    E -->|"事件模式"| F["EventBus 事件"]
-    E -->|"直接调用"| G["直接方法调用"]
-    
-    F --> H["组件处理"]
-    G --> I["返回结果"]
-    H --> J["返回结果"]
-    
-    J -->|"→"| K["JavaScript 更新 UI"]
+    A["User Action"] --> B["JavaScript HTML/CSS"]
+    B -->|mbQuery()| C["MiniBlinkBridge"]
+    C --> D["MessageHandler"]
+
+    D --> E{Processing}
+    E -->|"Event Mode"| F["EventBus"]
+    E -->|"Direct Call"| G["Direct Method"]
+
+    F --> H["Component"]
+    G --> I["Result"]
+    H --> J["Result"]
+
+    J -->|"→"| K["JS Update UI"]
     I -->|"→"| K
 ```
 
@@ -282,23 +282,23 @@ python-miniblink/
 
 ```mermaid
 flowchart TB
-    subgraph Kernel["Cellium 微内核"]
+    subgraph Kernel["Cellium Kernel"]
         EB["EventBus"]
         MH["MessageHandler"]
         DI["DIContainer"]
         MP["Multiprocess"]
         WM["WindowManager"]
-        Components["组件单元"]
+        Components["Components"]
     end
 
-    MH -.->|"调度协调"| EB
-    EB -.->|"事件通信"| MH
-    
-    DI -->|"依赖注入"| MH
-    MP -->|"进程管理"| MH
-    WM -->|"窗口管理"| MH
-    
-    MH & DI & MP & WM -->|"组件协调"| Components
+    MH -.->|"Coordination"| EB
+    EB -.->|"Event Comm"| MH
+
+    DI -->|"Dependency Inject"| MH
+    MP -->|"Process Mgmt"| MH
+    WM -->|"Window Mgmt"| MH
+
+    MH & DI & MP & WM -->|"Component Coordination"| Components
 ```
 
 ### 事件总线 EventBus
