@@ -17,10 +17,10 @@
 **文档网站：** [https://cellium-project.github.io/Cellium/](https://cellium-project.github.io/Cellium/) （推荐 | 更好的阅读体验）
 
 **文档导航：**
-- [Component Tutorial](component-tutorial.en.md) | [组件开发教程](component-tutorial.md)
-- [Multiprocessing Tutorial](multiprocessing-tutorial.en.md) | [多进程教程](multiprocessing-tutorial.md)
-- [Event Mode Tutorial](event-mode-tutorial.en.md) | [事件模式教程](event-mode-tutorial.md)
-- [Logging Tutorial](logging-tutorial.en.md) | [日志使用](logging-tutorial.md)
+- [Component Tutorial](/docs/component-tutorial.en.md) | [组件开发教程](/docs/component-tutorial.md)
+- [Multiprocessing Tutorial](/docs/multiprocessing-tutorial.en.md) | [多进程教程](/docs/multiprocessing-tutorial.md)
+- [Event Mode Tutorial](/docs/event-mode-tutorial.en.md) | [事件模式教程](/docs/event-mode-tutorial.md)
+- [Logging Tutorial](/docs/logging-tutorial.en.md) | [日志使用](/docs/logging-tutorial.md)
 
 <p align="center">
   <img src="logo.png" alt="Cellium Logo" width="400">
