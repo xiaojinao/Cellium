@@ -1,5 +1,19 @@
 [English](README.en.md)
 
+<div align="center">
+
+![Python Version](https://img.shields.io/pypi/pyversions/cellium?logo=python&style=flat-square)
+![License](https://img.shields.io/pypi/l/cellium?logo=apache&style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows-blue?logo=windows&style=flat-square)
+![MiniBlink](https://img.shields.io/badge/MiniBlink-v132-yellow?logo=webkit&style=flat-square)
+
+![GitHub Stars](https://img.shields.io/github/stars/Cellium-Project/Cellium?logo=github&style=flat-square)
+![GitHub Forks](https://img.shields.io/github/forks/Cellium-Project/Cellium?logo=github&style=flat-square)
+![GitHub Issues](https://img.shields.io/github/issues/Cellium-Project/Cellium?logo=github&style=flat-square)
+![GitHub Last Commit](https://img.shields.io/github/last-commit/Cellium-Project/Cellium?logo=github&style=flat-square)
+
+</div>
+
 **文档网站：** [https://cellium-project.github.io/Cellium/](https://cellium-project.github.io/Cellium/) （推荐 | 更好的阅读体验）
 
 **文档导航：**
