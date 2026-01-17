@@ -127,38 +127,45 @@ class EventBus:
         handlers.extend([h for h in self._subscribers.get(event_name, []) if h not in handlers])
         return handlers
     
-    def publish(self, event_type: EventType, *args, **kwargs):
-        event_name = str(event_type)
-        
-        event = None
+    def _invoke_handler(self, handler: Callable, event_name: str, event: Any = None, *args, **kwargs) -> Any:
+        """统一调用事件处理器，处理同步和异步函数"""
+        if inspect.iscoroutinefunction(handler):
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    return asyncio.create_task(handler(event or event_name, *args, **kwargs))
+                else:
+                    return loop.run_until_complete(handler(event or event_name, *args, **kwargs))
+            except RuntimeError:
+                logger.warning(f"异步处理器需要事件循环: {handler.__name__}")
+        else:
+            if event:
+                return handler(event)
+            else:
+                return handler(event_name, *args, **kwargs)
+    
+    def _create_event(self, event_name: str, args: tuple, kwargs: dict) -> Any:
+        """统一创建事件对象"""
         if event_name in self._event_classes:
             try:
                 event_class = self._event_classes[event_name]
                 if args and isinstance(args[0], BaseEvent):
-                    event = args[0]
+                    return args[0]
                 else:
-                    event = event_class(*args, **kwargs)
+                    return event_class(*args, **kwargs)
             except Exception as e:
                 logger.warning(f"[WARNING] 创建事件对象失败: {e}")
+        return None
+    
+    def publish(self, event_type: EventType, *args, **kwargs):
+        event_name = str(event_type)
         
+        event = self._create_event(event_name, args, kwargs)
         result = None
         
         for handler in self._get_sorted_handlers(event_name):
             try:
-                if inspect.iscoroutinefunction(handler):
-                    try:
-                        loop = asyncio.get_event_loop()
-                        if loop.is_running():
-                            asyncio.create_task(handler(event or event_name, *args, **kwargs))
-                        else:
-                            loop.run_until_complete(handler(event or event_name, *args, **kwargs))
-                    except RuntimeError:
-                        logger.warning(f"异步处理器需要事件循环: {handler.__name__}")
-                else:
-                    if event:
-                        result = handler(event)
-                    else:
-                        result = handler(event_name, *args, **kwargs)
+                result = self._invoke_handler(handler, event_name, event, *args, **kwargs)
             except Exception as e:
                 logger.error(f"[ERROR] 事件处理器错误 [{event_type}]: {e}")
                 import traceback
@@ -168,14 +175,8 @@ class EventBus:
             if self._match_pattern(event_name, pattern):
                 for handler, priority in handlers:
                     try:
-                        print(f"[TRACE-WILDCARD] 调用通配符处理器: handler={handler}, pattern={pattern}, event={event}, args={args}")
-                        if inspect.iscoroutinefunction(handler):
-                            if asyncio.get_event_loop().is_running():
-                                asyncio.create_task(handler(event_name, **kwargs))
-                            else:
-                                asyncio.get_event_loop().run_until_complete(handler(event_name, **kwargs))
-                        else:
-                            result = handler(event_name, **kwargs)
+                        logger.debug(f"[TRACE-WILDCARD] 调用通配符处理器: handler={handler.__name__}, pattern={pattern}")
+                        result = self._invoke_handler(handler, event_name, event, **kwargs)
                     except Exception as e:
                         logger.error(f"[ERROR] 通配符事件处理器错误 [{pattern}]: {e}")
                         import traceback
@@ -185,11 +186,8 @@ class EventBus:
             handlers_to_remove = list(self._once_subscribers[event_name])
             for handler in handlers_to_remove:
                 try:
-                    print(f"[TRACE-ONCE] 调用一次性处理器: handler={handler}, event={event}, args={args}")
-                    if event:
-                        handler(event)
-                    else:
-                        handler(event_name, *args, **kwargs)
+                    logger.debug(f"[TRACE-ONCE] 调用一次性处理器: handler={handler.__name__}")
+                    result = self._invoke_handler(handler, event_name, event, *args, **kwargs)
                 except Exception as e:
                     logger.error(f"[ERROR] 一次性事件处理器错误 [{event_type}]: {e}")
                     import traceback
@@ -198,34 +196,28 @@ class EventBus:
         
         return result
     
+    async def _invoke_handler_async(self, handler: Callable, event_name: str, event: Any = None, *args, **kwargs) -> Any:
+        """统一异步调用事件处理器"""
+        if inspect.iscoroutinefunction(handler):
+            if event:
+                return await handler(event)
+            else:
+                return await handler(event_name, *args, **kwargs)
+        else:
+            if event:
+                return handler(event)
+            else:
+                return handler(event_name, *args, **kwargs)
+    
     async def publish_async(self, event_type: EventType, *args, **kwargs):
         event_name = str(event_type)
         
-        event = None
-        if event_name in self._event_classes:
-            try:
-                event_class = self._event_classes[event_name]
-                if args and isinstance(args[0], BaseEvent):
-                    event = args[0]
-                else:
-                    event = event_class(*args, **kwargs)
-            except Exception as e:
-                logger.warning(f"[WARNING] 创建事件对象失败: {e}")
-        
+        event = self._create_event(event_name, args, kwargs)
         result = None
         
         for handler in self._get_sorted_handlers(event_name):
             try:
-                if inspect.iscoroutinefunction(handler):
-                    if event:
-                        result = await handler(event)
-                    else:
-                        result = await handler(event_name, *args, **kwargs)
-                else:
-                    if event:
-                        result = handler(event)
-                    else:
-                        result = handler(event_name, *args, **kwargs)
+                result = await self._invoke_handler_async(handler, event_name, event, *args, **kwargs)
             except Exception as e:
                 logger.error(f"[ERROR] 事件处理器错误 [{event_type}]: {e}")
         
@@ -233,10 +225,7 @@ class EventBus:
             if self._match_pattern(event_name, pattern):
                 for handler, priority in handlers:
                     try:
-                        if inspect.iscoroutinefunction(handler):
-                            result = await handler(event_name, **kwargs)
-                        else:
-                            result = handler(event_name, **kwargs)
+                        result = await self._invoke_handler_async(handler, event_name, event, **kwargs)
                     except Exception as e:
                         logger.error(f"[ERROR] 通配符事件处理器错误 [{pattern}]: {e}")
         
@@ -244,10 +233,7 @@ class EventBus:
             handlers_to_remove = list(self._once_subscribers[event_name])
             for handler in handlers_to_remove:
                 try:
-                    if event:
-                        await handler(event)
-                    else:
-                        await handler(event_name, *args, **kwargs)
+                    result = await self._invoke_handler_async(handler, event_name, event, *args, **kwargs)
                 except Exception as e:
                     logger.error(f"[ERROR] 一次性事件处理器错误 [{event_type}]: {e}")
             self._once_subscribers[event_name].clear()
