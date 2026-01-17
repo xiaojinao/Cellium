@@ -1,5 +1,5 @@
 @echo off
-cd c:\Users\Administrator\Desktop\app\python-miniblink
+cd /d %~dp0
 if not exist "dist" mkdir "dist"
 
 python -m nuitka --standalone --onefile ^
