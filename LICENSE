@@ -1,4 +1,4 @@
-MIT License
+MIT License with Attribution Requirement
 
 Copyright (c) 2026 Cellium Contributors
 
@@ -11,6 +11,33 @@ furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
+ADDITIONAL RESTRICTIONS:
+
+1. Attribution Requirement
+Any redistribution, modification, or derivative work of this Software must
+clearly identify and credit the original authors and copyright holders
+("Cellium Contributors"). Removing, obscuring, or failing to include proper
+attribution to the original authors is strictly prohibited.
+
+2. Prohibition of Unauthorized Redistribution
+No person or entity may redistribute, republish, or distribute this Software
+or any derivative works thereof without:
+   a) Including the original copyright notice and attribution
+   b) Clearly indicating any modifications made
+   c) Providing a link or reference to the original source repository
+
+3. Prohibition of Content Aggregation Without Permission
+The following platforms and their affiliated entities are expressly prohibited
+from copying, modifying, or redistributing this Software without explicit
+written permission from the original authors:
+   a) CSDN (Chinese Software Developer Network) and all affiliated websites
+   b) Gitcode and all affiliated platforms
+   c) Any platform known for aggregating and redistributing content without
+      explicit permission from original creators
+
+Any redistribution on prohibited platforms without explicit written permission
+from the original authors constitutes a violation of this license.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
