@@ -439,8 +439,6 @@ class MainWindow:
             mbInit.argtypes = [ctypes.c_void_p]
             mbInit(None)
             
-            logger.debug(f"DLL 中的导出函数: {[name for name in dir(self.lib) if not name.startswith('_') and name.startswith('mb')]}")
-            
             if hasattr(self.lib, 'mbEnableHighDPISupport'):
                 self.lib.mbEnableHighDPISupport()
                 logger.info("高 DPI 支持已启用")
