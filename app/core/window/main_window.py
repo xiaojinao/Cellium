@@ -213,26 +213,22 @@ class StaticServer:
         class SPAHandler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, directory=directory, **kwargs)
-            
+
             def do_GET(self):
                 """处理 GET 请求，支持 SPA 路由回退"""
-                # 获取请求的文件路径
                 path = self.path
                 if path == '/':
                     path = '/index.html'
-                
-                # 移除查询参数
+
                 if '?' in path:
                     path = path.split('?')[0]
-                
-                # 转换路径
+
                 file_path = self.translate_path(path)
-                
-                # 如果文件不存在，返回 index.html（SPA 路由回退）
+
                 if not os.path.exists(file_path):
                     logger.debug(f"文件不存在，回退到 index.html: {path}")
                     self.path = '/index.html'
-                
+
                 return super().do_GET()
             
             def log_message(self, format, *args):
@@ -347,24 +343,18 @@ class MainWindow:
             return False
         
         try:
-            # 使用 wkeLoadURL 加载本地服务器 URL
-            if hasattr(self.lib, 'wkeLoadURL'):
-                self.lib.wkeLoadURL(self.webview, self._html_url.encode('utf-8'))
-                logger.info(f"已加载 URL: {self._html_url}")
-                return True
-            else:
-                # 回退到 mbLoadHtmlWithBaseUrl
-                html_path = os.path.join(self.html_dir, 'index.html')
-                with open(html_path, 'r', encoding='utf-8') as f:
-                    html_content = f.read()
-                base_url = self._html_url.replace('/index.html', '/')
-                self.lib.mbLoadHtmlWithBaseUrl(
-                    self.webview, 
-                    html_content.encode('utf-8'), 
-                    base_url.encode('utf-8')
-                )
-                logger.info(f"已加载 HTML (fallback): {base_url}")
-                return True
+            # 使用 mbLoadHtmlWithBaseUrl 加载本地服务器 URL
+            html_path = os.path.join(self.html_dir, 'index.html')
+            with open(html_path, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            base_url = self._html_url.replace('/index.html', '/')
+            self.lib.mbLoadHtmlWithBaseUrl(
+                self.webview, 
+                html_content.encode('utf-8'), 
+                base_url.encode('utf-8')
+            )
+            logger.info(f"已加载 HTML: {base_url}")
+            return True
         except Exception as e:
             logger.error(f"加载 HTML 失败: {e}")
             import traceback
@@ -404,7 +394,7 @@ class MainWindow:
             'mbLoadHtmlWithBaseUrl': ([ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p], None),
             'mbOnAlertBox': ([ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p], None),
             'mbOnNavigation': ([ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p], None),
-            'mbRunJS': ([ctypes.c_void_p, ctypes.c_void_p, ctypes.c_char_p, 
+            'mbRunJs': ([ctypes.c_void_p, ctypes.c_void_p, ctypes.c_char_p, 
                         ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p], None),
             'mbResponseQuery': ([ctypes.c_void_p, ctypes.c_int64, ctypes.c_int, ctypes.c_char_p], None),
             'mbOnJsQuery': ([ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p], None),
@@ -489,12 +479,6 @@ class MainWindow:
                     logger.info("AppUserModelID 已设置")
                 except Exception as e:
                     logger.warning(f"设置 AppUserModelID 失败: {e}")
-
-                if hasattr(self.lib, 'wkeSetMemoryCacheEnable'):
-                    self.lib.wkeSetMemoryCacheEnable(self.webview, True)
-                    logger.info("内存缓存已启用")
-                else:
-                    logger.debug("wkeSetMemoryCacheEnable 不可用，跳过")
 
                 user32.ShowWindow(self.hwnd, 0)
                 logger.info("窗口已创建（初始隐藏）")

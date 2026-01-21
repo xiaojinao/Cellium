@@ -10,7 +10,7 @@ from app.core.util.logger import setup_logger
 
 def main():
     # 日志级别: DEBUG, INFO, WARNING, ERROR
-    setup_logger("app", level="INFO")
+    setup_logger("app", level="DEBUG")
     setup_di_container()
     container = get_container()
     load_components(container)

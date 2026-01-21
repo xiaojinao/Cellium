@@ -79,7 +79,7 @@ class MiniBlinkBridge:
         )
         
         cb = MB_RUNJS_CALLBACK(js_callback)
-        self.lib.mbRunJS(self.webview, None, script.encode('utf-8'), True, cb, None, None)
+        self.lib.mbRunJs(self.webview, None, script.encode('utf-8'), True, cb, None, None)
     
     def _on_navigation_callback(self, webview, param, navigation_type, url):
         """导航回调"""
