@@ -9,7 +9,8 @@ from app.core.di.container import get_container
 from app.core.util.logger import setup_logger
 
 def main():
-    setup_logger("app", level="DEBUG")
+    # 日志级别: DEBUG, INFO, WARNING, ERROR
+    setup_logger("app", level="INFO")
     setup_di_container()
     container = get_container()
     load_components(container)
