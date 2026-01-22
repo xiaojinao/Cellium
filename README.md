@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue?logo=python&style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-blue?logo=mit&style=flat-square)
+![License](https://img.shields.io/badge/license-Apache%202.0-blue?logo=apache&style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue?logo=windows&style=flat-square)
 ![MiniBlink](https://img.shields.io/badge/MiniBlink-v132-yellow?logo=webkit&style=flat-square)
 
