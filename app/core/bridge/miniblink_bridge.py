@@ -15,6 +15,16 @@ user32 = ctypes.windll.user32
 logger = logging.getLogger(__name__)
 
 
+class MbConsoleLevel:
+    """MiniBlink 控制台日志级别"""
+    MB_LEVEL_LOG = 1
+    MB_LEVEL_WARNING = 2
+    MB_LEVEL_ERROR = 3
+    MB_LEVEL_DEBUG = 4
+    MB_LEVEL_INFO = 5
+    MB_LEVEL_REVOKED_ERROR = 6
+
+
 class MiniBlinkBridge:
     def __init__(self, browser):
         self.browser = browser
@@ -25,6 +35,7 @@ class MiniBlinkBridge:
         self._nav_callback = None
         self._alert_callback = None
         self._jsquery_callback = None
+        self._console_callback = None
     
     def send_to_js(self, script):
         """发送 JavaScript 代码到页面执行
@@ -33,6 +44,7 @@ class MiniBlinkBridge:
             script: JavaScript 代码字符串
         """
         try:
+            logger.debug(f"[BRIDGE] 发送JS: {script[:100]}")
             self.lib.mbRunJs(
                 self.webview, None,
                 script.encode('utf-8'),
@@ -40,6 +52,25 @@ class MiniBlinkBridge:
             )
         except Exception as e:
             logger.error(f"[ERROR] 发送 JS 失败: {e}")
+            import traceback
+            logger.error(f"[ERROR] 堆栈: {traceback.format_exc()}")
+    
+    def eval_js(self, expression):
+        """在全局作用域执行 JS 表达式
+        
+        Args:
+            expression: JS 表达式
+        """
+        try:
+            script = f"try {{ {expression} }} catch(e) {{ console.error('JS Error:', e.message); }}"
+            logger.debug(f"[BRIDGE] evalJS: {expression[:100]}")
+            self.lib.mbRunJs(
+                self.webview, None,
+                script.encode('utf-8'),
+                True, None, None, None
+            )
+        except Exception as e:
+            logger.error(f"[ERROR] 执行 JS 失败: {e}")
     
     def set_element_value(self, element_id, value):
         """设置 HTML 元素的值
@@ -79,7 +110,7 @@ class MiniBlinkBridge:
         )
         
         cb = MB_RUNJS_CALLBACK(js_callback)
-        self.lib.mbRunJs(self.webview, None, script.encode('utf-8'), True, cb, None, None)
+        self.lib.mbRunJS(self.webview, None, script.encode('utf-8'), True, cb, None, None)
     
     def _on_navigation_callback(self, webview, param, navigation_type, url):
         """导航回调"""
@@ -180,8 +211,56 @@ class MiniBlinkBridge:
             logger.error(f"[ERROR] 设置 JsQuery 回调失败: {e}")
             return False
     
+    def _on_console_callback(self, webview, param, level, message, source_name, source_line, stack_trace):
+        """控制台回调"""
+        try:
+            level_names = {
+                MbConsoleLevel.MB_LEVEL_LOG: "LOG",
+                MbConsoleLevel.MB_LEVEL_WARNING: "WARNING",
+                MbConsoleLevel.MB_LEVEL_ERROR: "ERROR",
+                MbConsoleLevel.MB_LEVEL_DEBUG: "DEBUG",
+                MbConsoleLevel.MB_LEVEL_INFO: "INFO",
+                MbConsoleLevel.MB_LEVEL_REVOKED_ERROR: "REVOKED_ERROR"
+            }
+            
+            msg_str = ctypes.cast(message, ctypes.c_char_p).value.decode('utf-8') if message else ""
+            src_name = ctypes.cast(source_name, ctypes.c_char_p).value.decode('utf-8') if source_name else ""
+            
+            level_name = level_names.get(level, f"LEVEL_{level}")
+            logger.debug(f"[CONSOLE][{level_name}] {msg_str} (file:{src_name}:{source_line})")
+        except Exception as e:
+            logger.error(f"[ERROR] 控制台回调错误: {e}")
+    
+    def _setup_console_callback(self):
+        """设置控制台回调"""
+        try:
+            MB_CONSOLE_CALLBACK = ctypes.WINFUNCTYPE(
+                None,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_char_p,
+                ctypes.c_uint,
+                ctypes.c_char_p
+            )
+            
+            self._console_callback = MB_CONSOLE_CALLBACK(self._on_console_callback)
+            
+            if hasattr(self.lib, 'mbOnConsole'):
+                self.lib.mbOnConsole(self.webview, self._console_callback, None)
+                logger.info("[INFO] 控制台回调已设置")
+                return True
+            else:
+                logger.warn("[WARN] mbOnConsole 不可用，跳过")
+                return False
+        except Exception as e:
+            logger.error(f"[ERROR] 设置控制台回调失败: {e}")
+            return False
+    
     def setup_all_callbacks(self):
         """设置所有回调"""
         self._setup_navigation_callback()
         self._setup_alert_callback()
         self._setup_js_query_callback()
+        self._setup_console_callback()
