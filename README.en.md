@@ -99,6 +99,7 @@ python-miniblink/
   - [ICell Interface](#icell-interface)
   - [MessageHandler](#messagehandler)
   - [MiniBlinkBridge](#miniblinkbridge)
+  - [Frontend Logging](#frontend-logging)
   - [Dependency Injection DI](#dependency-injection-di)
 - [API Reference](#api-reference)
 - [Component Development Guide](#component-development-guide)
@@ -689,6 +690,38 @@ class MyComponent:
 | `set_element_value(element_id, value)` | Set element value | `bridge.set_element_value('output', '2')` |
 | `get_element_value(element_id, callback)` | Get element value (async) | `bridge.get_element_value('input', callback)` |
 | `setup_all_callbacks()` | Setup all MiniBlink callbacks | Call during initialization |
+
+#### Frontend Logging
+
+MiniBlink supports forwarding JavaScript `console` logs from the frontend to the Python logging system for easy debugging.
+
+**Frontend JavaScript**
+```javascript
+console.log("Debug info");
+console.warn("Warning message");
+console.error("Error message");
+console.info("Info message");
+console.debug("Debug message");
+```
+
+**Python Log Output**
+```bash
+[DEBUG] [Console][LOG] Debug info (file:index.html:100)
+[DEBUG] [Console][WARNING] Warning message (file:index.html:101)
+[DEBUG] [Console][ERROR] Error message (file:index.html:102)
+```
+
+**Log Level Mapping**
+
+| Frontend Console | Python Log Level |
+|-----------------|------------------|
+| console.log | DEBUG |
+| console.warn | WARNING |
+| console.error | ERROR |
+| console.info | INFO |
+| console.debug | DEBUG |
+
+> **Note**: This feature requires MiniBlink DLL to support the `mbOnConsole` interface (v132 and above).
 
 ### TitleBarHandler
 

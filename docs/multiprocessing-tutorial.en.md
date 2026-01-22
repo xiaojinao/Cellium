@@ -366,18 +366,4 @@ Exceptions are passed back to the main process through pickle. Check logs for de
 
 Multiprocessing lets time-consuming tasks run in the background for a smoother user experience!
 
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-  // 初始化，并将所有 class 为 language-mermaid 的 pre 标签渲染为图表
-  mermaid.initialize({ startOnLoad: true });
-  
-  // 针对 Jekyll 的兼容处理：Jekyll 默认生成的代码块 class 是 language-mermaid
-  window.addEventListener('load', () => {
-    const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
-    codeBlocks.forEach(codeBlock => {
-      const pre = codeBlock.parentElement;
-      pre.classList.add('mermaid');
-      pre.textContent = codeBlock.textContent;
-    });
-  });
-</script>
+>

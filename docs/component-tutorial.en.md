@@ -519,19 +519,3 @@ Files created in this tutorial:
 | `index.html` | Frontend page (needs modification or creation) |
 
 Through this tutorial, you've mastered the basic flow of Cellium component development. Similarly, you can create components with any functionality by inheriting from the `ICell` interface and implementing the three core methods.
-
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-  // 初始化，并将所有 class 为 language-mermaid 的 pre 标签渲染为图表
-  mermaid.initialize({ startOnLoad: true });
-  
-  // 针对 Jekyll 的兼容处理：Jekyll 默认生成的代码块 class 是 language-mermaid
-  window.addEventListener('load', () => {
-    const codeBlocks = document.querySelectorAll('pre code.language-mermaid');
-    codeBlocks.forEach(codeBlock => {
-      const pre = codeBlock.parentElement;
-      pre.classList.add('mermaid');
-      pre.textContent = codeBlock.textContent;
-    });
-  });
-</script>

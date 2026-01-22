@@ -800,7 +800,4 @@ Cellium 的事件总线经过优化，对于大多数场景性能是完全足够
 
 ---
 
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true });
-</script>
+

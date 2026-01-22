@@ -101,6 +101,7 @@ python-miniblink/
   - [组件接口 ICell](#组件接口-icell)
   - [消息处理器 MessageHandler](#消息处理器-messagehandler)
   - [桥接层 MiniBlinkBridge](#桥接层-miniblinkbridge)
+  - [前端日志](#前端日志)
   - [依赖注入 DI](#依赖注入-di)
 - [API 参考](#api-参考)
 - [组件开发指南](#组件开发指南)
@@ -899,6 +900,38 @@ class MyComponent:
 | `set_element_value(element_id, value)` | 设置元素值 | `bridge.set_element_value('output', '2')` |
 | `get_element_value(element_id, callback)` | 获取元素值（异步） | `bridge.get_element_value('input', callback)` |
 | `setup_all_callbacks()` | 设置所有 MiniBlink 回调 | 初始化时调用 |
+
+#### 前端日志
+
+MiniBlink 支持将前端 JavaScript 的 `console` 日志转发到 Python 日志系统，方便调试。
+
+**前端 JavaScript**
+```javascript
+console.log("调试信息");
+console.warn("警告信息");
+console.error("错误信息");
+console.info("普通信息");
+console.debug("调试信息");
+```
+
+**Python 日志输出**
+```bash
+[DEBUG] [Console][LOG] 调试信息 (file:index.html:100)
+[DEBUG] [Console][WARNING] 警告信息 (file:index.html:101)
+[DEBUG] [Console][ERROR] 错误信息 (file:index.html:102)
+```
+
+**日志级别映射**
+
+| 前端 console | Python 日志级别 |
+|-------------|----------------|
+| console.log | DEBUG |
+| console.warn | WARNING |
+| console.error | ERROR |
+| console.info | INFO |
+| console.debug | DEBUG |
+
+> **注意**：此功能需要 MiniBlink DLL 支持 `mbOnConsole` 接口（v132 及以上版本）。
 
 ### 主窗口 MainWindow
 
