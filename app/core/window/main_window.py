@@ -466,7 +466,6 @@ class MainWindow:
                 current_style = user32.GetWindowLongPtrW(self.hwnd, GWL_EXSTYLE)
                 current_style &= ~WS_EX_TOOLWINDOW
                 current_style |= WS_EX_APPWINDOW
-                current_style |= WS_EX_LAYERED
                 user32.SetWindowLongPtrW(self.hwnd, GWL_EXSTYLE, current_style)
                 
                 owner = user32.GetWindowLongPtrW(self.hwnd, GWL_HWNDPARENT)
@@ -503,6 +502,16 @@ class MainWindow:
         if not self.hwnd:
             return
         
+        GWL_EXSTYLE = -20
+        WS_EX_LAYERED = 0x00080000
+        LWA_ALPHA = 0x00000002
+        
+        current_style = user32.GetWindowLongPtrW(self.hwnd, GWL_EXSTYLE)
+        was_layered = current_style & WS_EX_LAYERED
+        
+        if not was_layered:
+            user32.SetWindowLongPtrW(self.hwnd, GWL_EXSTYLE, current_style | WS_EX_LAYERED)
+        
         steps = 20
         step_duration = duration / steps
         
@@ -513,6 +522,9 @@ class MainWindow:
             
             user32.SetLayeredWindowAttributes(self.hwnd, 0, alpha, LWA_ALPHA)
             time.sleep(step_duration / 1000.0)
+        
+        user32.SetLayeredWindowAttributes(self.hwnd, 0, 0, LWA_ALPHA)
+        user32.ShowWindow(self.hwnd, 0)
         
         logger.info("[INFO] 淡出动画完成")
     

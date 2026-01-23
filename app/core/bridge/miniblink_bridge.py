@@ -5,6 +5,7 @@ MiniBlink 通信桥接模块
 """
 
 import ctypes
+import json
 import logging
 from ctypes import wintypes, byref
 from ..bus.event_bus import event_bus
@@ -179,11 +180,18 @@ class MiniBlinkBridge:
             result = event_bus.publish(EventType.JSQUERY, event)
             
             if result is not None:
+                if isinstance(result, str):
+                    response_str = result
+                elif isinstance(result, (dict, list)):
+                    response_str = json.dumps(result, ensure_ascii=False)
+                else:
+                    response_str = str(result)
+                
                 self.lib.mbResponseQuery(
                     self.webview,
                     query_id,
                     custom_msg,
-                    result.encode('utf-8')
+                    response_str.encode('utf-8')
                 )
             return 0
         except Exception as e:
