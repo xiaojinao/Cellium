@@ -30,9 +30,8 @@
 
 **Python + HTML/JS Desktop Application Framework.**
 
-Based on "Core-Driven, Module Decoupling" philosophy, connecting Python backend with Web frontend through a lightweight micro-kernel.
+Using a sophisticated micro-kernel (Core) as the central orchestrator, Cellium achieves a complete separation between frontend interaction and backend logic. Developers only need to encapsulate their functionality into independent "cell units," while all cross-module communication, concurrent scheduling, and resource management are handled transparently by the Cellium core, making the construction of complex systems as simple and intuitive as assembling a puzzle.
 
-**Cellium does not attempt to hide system complexity, but concentrates the complexity in the microkernel, in exchange for a minimalist development experience at the component layer.**
 
 | Feature | Description |
 |---------|-------------|
