@@ -178,13 +178,6 @@ def get_multiprocess_manager() -> MultiprocessManager:
 
 
 def worker_initializer(init_func: Callable) -> Callable:
-    """装饰器：注册工作进程初始化函数
-    
-    使用方式:
-        @worker_initializer
-        def init_database():
-            global db_connection
-            db_connection = create_connection()
-    """
+    """装饰器：注册工作进程初始化函数 """
     _manager.register_initializer(init_func)
     return init_func

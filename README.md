@@ -53,8 +53,27 @@
 **快速示例：**
 ```python
 # app/components/greeter.py
-class Greeter(ICell):
+from app.core.interface.base_cell import BaseCell
+
+
+class Greeter(BaseCell):
+    """问候组件：接收文字，添加后缀后返回"""
+
+    @property
+    def cell_name(self) -> str:
+        """组件唯一标识，用于前端调用"""
+        return "greeter"
+
+    def get_commands(self) -> dict:
+        """返回可用命令列表"""
+        return {
+            "greet": "添加问候后缀，例如: greeter:greet:你好"
+        }
+
     def _cmd_greet(self, text: str = "") -> str:
+        """添加 Hallo Cellium 后缀"""
+        if not text:
+            return "Hallo Cellium"
         return f"{text} Hallo Cellium"
 ```
 
@@ -62,6 +81,64 @@ class Greeter(ICell):
 <!-- html/index.html -->
 <button onclick="window.mbQuery(0, 'greeter:greet:你好', function(){})">问候</button>
 ```
+
+### 直接调用方法
+
+Cellium 组件支持**直接调用**模式，即前端通过 `window.mbQuery()` 直接调用后端组件方法，无需配置路由。
+
+#### 1. 后端组件定义
+
+组件只需继承 `BaseCell` 基类，实现三个核心方法：
+
+| 方法 | 说明 |
+|------|------|
+| `cell_name` | 组件唯一标识，用于前端调用 |
+| `get_commands()` | 返回可用命令字典 |
+| `_cmd_<命令名>` | 具体命令实现，BaseCell 自动映射 |
+
+**BaseCell 自动处理命令映射**，无需编写 `execute` 方法。
+
+#### 2. 前端调用格式
+
+```javascript
+// 格式：window.mbQuery(id, 'cell_name:command[:args]', callback)
+// id: 消息ID，通常传 0
+// cell_name: 组件的 cell_name 属性值
+// command: get_commands() 中定义的命令名
+// args: 可选参数，支持字符串或 JSON
+// callback: 回调函数，接收返回结果
+```
+
+#### 3. 调用示例
+
+**简单参数：**
+```javascript
+window.mbQuery(0, 'greeter:greet:你好', function(response) {
+    console.log(response);  // "你好 Hallo Cellium"
+});
+```
+
+**复杂数据：**
+```javascript
+const data = JSON.stringify({name: "Alice", age: 25});
+window.mbQuery(0, `user:create:${data}`, function(response) {
+    console.log(response);
+});
+```
+
+**无参数：**
+```javascript
+window.mbQuery(0, 'greeter:greet:', function(response) {
+    console.log(response);  // "Hallo Cellium"
+});
+```
+
+#### 4. 命令格式规范
+
+- **格式**：`cell_name:command[:args]`
+- **cell_name**：组件的 `cell_name` 属性值（小写字母）
+- **command**：组件 `get_commands()` 中定义的命令名
+- **args**：可选参数，支持简单字符串或 JSON 格式
 
 选择 Cellium：**用你熟悉的 Python 和 Web 技术，快速构建桌面应用。**
 
@@ -99,6 +176,7 @@ python-miniblink/
   - [微内核 Core](#微内核-core)
   - [事件总线 EventBus](#事件总线-eventbus)
   - [组件接口 ICell](#组件接口-icell)
+  - [基础组件 BaseCell](#基础组件-basecell-推荐)
   - [消息处理器 MessageHandler](#消息处理器-messagehandler)
   - [桥接层 MiniBlinkBridge](#桥接层-miniblinkbridge)
   - [前端日志](#前端日志)
@@ -106,7 +184,9 @@ python-miniblink/
 - [API 参考](#api-参考)
 - [组件开发指南](#组件开发指南)
   - [创建新组件](#创建新组件)
-  - [ICell 接口规范](#icell-接口规范)
+  - [ICell vs BaseCell](#icell-vs-basecell)
+  - [BaseCell 功能](#basecell-功能)
+  - [组件接口规范](#组件接口规范)
   - [命令调用格式](#命令调用格式)
 - [配置指南](#配置指南)
 - [快速开始](#快速开始)
@@ -245,7 +325,8 @@ python-miniblink/
 │   │   │   └── container.py     # DI 容器
 │   │   ├── interface/           # 接口定义
 │   │   │   ├── __init__.py
-│   │   │   └── icell.py         # ICell 组件接口
+│   │   │   ├── icell.py         # ICell 组件接口
+│   │   │   └── base_cell.py     # BaseCell 基础组件（推荐）
 │   │   └── __init__.py          # 模块导出
 │   ├── components/              # 组件单元
 │   │   ├── __init__.py
@@ -456,6 +537,28 @@ class MyCell(ICell):
         }
 ```
 
+#### 基础组件 BaseCell（推荐）
+
+`BaseCell` 是基于 `ICell` 的封装，提供自动命令映射和事件注册功能。
+
+```python
+from app.core.interface.base_cell import BaseCell
+
+
+class MyCell(BaseCell):
+    """我的组件"""
+
+    def _cmd_greet(self, name: str = "") -> str:
+        """打招呼"""
+        return f"Hello, {name}!"
+```
+
+**自动功能：**
+- 命令映射：`greet` → `_cmd_greet()`
+- 命令列表：自动扫描 docstring
+- 事件注册：自动调用 `register_component_handlers()`
+- 默认 cell_name：使用类名小写
+
 ### 消息处理器 MessageHandler
 
 消息处理器是前端与后端组件的桥梁，负责解析和路由命令。
@@ -535,49 +638,121 @@ class Calculator(metaclass=AutoInjectMeta):
 
 ### 创建新组件
 
+Cellium 推荐使用 `BaseCell` 作为组件基类，它提供了自动命令映射、依赖注入和事件支持。
+
 在 `app/components/` 目录下创建新的 Python 文件：
 
 ```python
 # app/components/filemanager.py
-from app.core.interface.icell import ICell
+from app.core.interface.base_cell import BaseCell
 
-class FileManager(ICell):
+
+class FileManager(BaseCell):
     """文件管理组件"""
-    
-    @property
-    def cell_name(self) -> str:
-        return "filemanager"
-    
-    def execute(self, command: str, *args, **kwargs) -> str:
-        if command == "read":
-            path = args[0] if args else ""
-            return self._read_file(path)
-        elif command == "write":
-            path, content = args[0], args[1] if len(args) > 1 else ""
-            return self._write_file(path, content)
-        return f"Unknown command: {command}"
-    
-    def get_commands(self) -> dict:
-        return {
-            "read": "读取文件，例如: filemanager:read:C:/test.txt",
-            "write": "写入文件，例如: filemanager:write:C:/test.txt:内容"
-        }
-    
-    def _read_file(self, path: str) -> str:
+
+    def _cmd_read(self, path: str = "") -> str:
         """读取文件内容"""
         with open(path, 'r', encoding='utf-8') as f:
             return f.read()
-    
-    def _write_file(self, path: str, content: str) -> str:
+
+    def _cmd_write(self, path: str = "", content: str = "") -> str:
         """写入文件内容"""
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
         return "Write successful"
 ```
 
-### ICell 接口规范
+**BaseCell 自动处理：**
+- `cell_name`：默认使用类名小写（如 `FileManager` → `filemanager`）
+- `execute`：自动映射命令到 `_cmd_` 方法
+- `get_commands`：自动扫描 `_cmd_` 方法的 docstring
 
-所有组件必须实现以下三个方法：
+#### 高级用法
+
+如果需要自定义，可以重写方法：
+
+```python
+class FileManager(BaseCell):
+    @property
+    def cell_name(self) -> str:
+        return "filemanager"  # 自定义名称
+
+    def get_commands(self) -> dict:
+        return {"read": "读取文件"}  # 自定义命令列表
+```
+
+### ICell vs BaseCell
+
+| 特性 | ICell | BaseCell |
+|------|-------|----------|
+| 灵活性 | 高（完全自定义） | 中（约定优先） |
+| 代码量 | 较多（需写 execute） | 较少（自动映射） |
+| 学习曲线 | 需要理解分发逻辑 | 简单（遵循约定） |
+| 事件注册 | 需手动调用 | 自动 |
+| 适合场景 | 特殊需求 | 大多数组件 |
+
+**推荐：** 新手使用 `BaseCell`，熟手根据需求选择。
+
+### BaseCell 功能
+
+#### 自动命令映射
+
+组件方法以 `_cmd_` 前缀开头，自动被映射为命令：
+
+```python
+class Greeter(BaseCell):
+    def _cmd_greet(self, name: str = "") -> str:
+        """打招呼"""
+        return f"Hello, {name}!"
+
+# 前端调用：greeter:greet:World
+```
+
+#### 自动命令列表
+
+`get_commands()` 自动扫描 `_cmd_` 方法的 docstring：
+
+```python
+class Greeter(BaseCell):
+    def _cmd_greet(self, name: str = "") -> str:
+        """打招呼，例如: greeter:greet:Alice"""
+        return f"Hello, {name}!"
+
+# get_commands() 返回：
+# {"greet": "打招呼，例如: greeter:greet:Alice"}
+```
+
+#### 依赖注入
+
+使用 `injected()` 声明依赖：
+
+```python
+from app.core.di.container import injected
+
+class MyCell(BaseCell):
+    event_bus = injected(EventBus)  # 自动注入
+
+    def _cmd_do_something(self):
+        self.event_bus.publish("event.name")  # 使用注入的服务
+```
+
+#### 事件处理
+
+使用 `@event` 装饰器声明事件处理器：
+
+```python
+from app.core.bus import event
+
+class MyCell(BaseCell):
+    @event("user.login")
+    def on_user_login(self, event_name, **kwargs):
+        """处理用户登录事件"""
+        print(f"用户登录: {kwargs.get('username')}")
+```
+
+### 组件接口规范
+
+所有组件必须实现以下方法（或继承 BaseCell）：
 
 | 方法 | 返回类型 | 说明 |
 |------|---------|------|

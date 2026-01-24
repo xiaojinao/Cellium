@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class DIContainer:
-    """轻量级依赖注入容器"""
+    """依赖注入容器"""
     
     _instance: Optional['DIContainer'] = None
     

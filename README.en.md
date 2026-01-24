@@ -51,8 +51,23 @@ Based on "Core-Driven, Module Decoupling" philosophy, connecting Python backend 
 **Quick Example:**
 ```python
 # app/components/greeter.py
-class Greeter(ICell):
+from app.core.interface.base_cell import BaseCell
+
+
+class Greeter(BaseCell):
+    """Greeting component: adds suffix to input text"""
+
+    @property
+    def cell_name(self) -> str:
+        return "greeter"
+
+    def get_commands(self) -> dict:
+        return {"greet": "Add greeting suffix, e.g., greeter:greet:Hello"}
+
     def _cmd_greet(self, text: str = "") -> str:
+        """Add Hallo Cellium suffix"""
+        if not text:
+            return "Hallo Cellium"
         return f"{text} Hallo Cellium"
 ```
 
@@ -60,6 +75,56 @@ class Greeter(ICell):
 <!-- html/index.html -->
 <button onclick="window.mbQuery(0, 'greeter:greet:Hello', function(){})">Greet</button>
 ```
+
+### Direct Call Method
+
+Cellium components support **direct call** mode, where the frontend calls backend component methods directly via `window.mbQuery()`, without route configuration.
+
+#### 1. Backend Component Definition
+
+Components inherit the `BaseCell` base class:
+
+| Method | Description |
+|--------|-------------|
+| `cell_name` | Component identifier |
+| `get_commands()` | Return command dictionary |
+| `_cmd_<command>` | Command implementation, auto-mapped by BaseCell |
+
+**BaseCell auto-handles command mapping**, no need to write `execute` method.
+
+#### 2. Frontend Call Format
+
+```javascript
+// Format: window.mbQuery(id, 'cell_name:command[:args]', callback)
+```
+
+#### 3. Call Examples
+
+**Simple parameter:**
+```javascript
+window.mbQuery(0, 'greeter:greet:Hello', function(response) {
+    console.log(response);  // "Hello Hallo Cellium"
+});
+```
+
+**Complex data:**
+```javascript
+const data = JSON.stringify({name: "Alice", age: 25});
+window.mbQuery(0, `user:create:${data}`, function(response) {
+    console.log(response);
+});
+```
+
+**No parameter:**
+```javascript
+window.mbQuery(0, 'greeter:greet:', function(response) {
+    console.log(response);  // "Hallo Cellium"
+});
+```
+
+#### 4. Command Format
+
+- **Format**: `cell_name:command[:args]`
 
 Choose Cellium: **Build desktop apps quickly with your familiar Python and Web technologies.**
 
@@ -97,6 +162,7 @@ python-miniblink/
   - [Micro-Kernel Core](#micro-kernel-core)
   - [EventBus](#eventbus)
   - [ICell Interface](#icell-interface)
+  - [BaseCell](#basecell-recommended)
   - [MessageHandler](#messagehandler)
   - [MiniBlinkBridge](#miniblinkbridge)
   - [Frontend Logging](#frontend-logging)
@@ -104,7 +170,9 @@ python-miniblink/
 - [API Reference](#api-reference)
 - [Component Development Guide](#component-development-guide)
   - [Creating New Components](#creating-new-components)
-  - [ICell Interface Specification](#icell-interface-specification)
+  - [ICell vs BaseCell](#icell-vs-basecell)
+  - [BaseCell Features](#basecell-features)
+  - [Component Interface Specification](#component-interface-specification)
   - [Command Format](#command-format)
 - [Configuration Guide](#configuration-guide)
 - [Quick Start](#quick-start)
@@ -243,7 +311,8 @@ python-miniblink/
 │   │   │   └── container.py     # DI container
 │   │   ├── interface/           # Interface definitions
 │   │   │   ├── __init__.py
-│   │   │   └── icell.py         # ICell component interface
+│   │   │   ├── icell.py         # ICell component interface
+│   │   │   └── base_cell.py     # BaseCell base component (recommended)
 │   │   └── __init__.py          # Module exports
 │   ├── components/              # Component units
 │   │   ├── __init__.py
@@ -454,6 +523,28 @@ class MyCell(ICell):
         }
 ```
 
+#### BaseCell (Recommended)
+
+`BaseCell` is a wrapper based on `ICell` that provides automatic command mapping and event registration.
+
+```python
+from app.core.interface.base_cell import BaseCell
+
+
+class MyCell(BaseCell):
+    """My component"""
+
+    def _cmd_greet(self, name: str = "") -> str:
+        """Greet"""
+        return f"Hello, {name}!"
+```
+
+**Auto Features:**
+- Command mapping: `greet` → `_cmd_greet()`
+- Command list: auto-scan docstring
+- Event registration: auto-call `register_component_handlers()`
+- Default cell_name: use class name lowercase
+
 ### MessageHandler
 
 The message handler acts as a bridge between frontend and backend components, responsible for parsing and routing commands.
@@ -533,49 +624,121 @@ class Calculator(metaclass=AutoInjectMeta):
 
 ### Creating New Components
 
+Cellium recommends using `BaseCell` as the component base class, providing automatic command mapping, dependency injection, and event support.
+
 Create a new Python file in the `app/components/` directory:
 
 ```python
 # app/components/filemanager.py
-from app.core.interface.icell import ICell
+from app.core.interface.base_cell import BaseCell
 
-class FileManager(ICell):
+
+class FileManager(BaseCell):
     """File Manager Component"""
-    
-    @property
-    def cell_name(self) -> str:
-        return "filemanager"
-    
-    def execute(self, command: str, *args, **kwargs) -> str:
-        if command == "read":
-            path = args[0] if args else ""
-            return self._read_file(path)
-        elif command == "write":
-            path, content = args[0], args[1] if len(args) > 1 else ""
-            return self._write_file(path, content)
-        return f"Unknown command: {command}"
-    
-    def get_commands(self) -> dict:
-        return {
-            "read": "Read file, e.g., filemanager:read:C:/test.txt",
-            "write": "Write file, e.g., filemanager:write:C:/test.txt:content"
-        }
-    
-    def _read_file(self, path: str) -> str:
+
+    def _cmd_read(self, path: str = "") -> str:
         """Read file content"""
         with open(path, 'r', encoding='utf-8') as f:
             return f.read()
-    
-    def _write_file(self, path: str, content: str) -> str:
+
+    def _cmd_write(self, path: str = "", content: str = "") -> str:
         """Write file content"""
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
         return "Write successful"
 ```
 
-### ICell Interface Specification
+**BaseCell Auto-Handles:**
+- `cell_name`: defaults to lowercase class name (e.g., `FileManager` → `filemanager`)
+- `execute`: auto-maps commands to `_cmd_` methods
+- `get_commands`: auto-scans `_cmd_` method docstrings
 
-All components must implement the following three methods:
+#### Advanced Usage
+
+Override methods to customize:
+
+```python
+class FileManager(BaseCell):
+    @property
+    def cell_name(self) -> str:
+        return "filemanager"  # Custom name
+
+    def get_commands(self) -> dict:
+        return {"read": "Read file"}  # Custom command list
+```
+
+### ICell vs BaseCell
+
+| Feature | ICell | BaseCell |
+|---------|-------|----------|
+| Flexibility | High (fully custom) | Medium (convention-based) |
+| Code Amount | More (need write execute) | Less (auto-mapping) |
+| Learning Curve | Need understand dispatch logic | Simple (follow convention) |
+| Event Registration | Manual call | Auto |
+| Suitable For | Special requirements | Most components |
+
+**Recommendation:** Beginners use `BaseCell`, experienced developers choose based on needs.
+
+### BaseCell Features
+
+#### Auto Command Mapping
+
+Component methods prefixed with `_cmd_` are automatically mapped to commands:
+
+```python
+class Greeter(BaseCell):
+    def _cmd_greet(self, name: str = "") -> str:
+        """Greet"""
+        return f"Hello, {name}!"
+
+# Frontend call: greeter:greet:World
+```
+
+#### Auto Command List
+
+`get_commands()` auto-scans `_cmd_` method docstrings:
+
+```python
+class Greeter(BaseCell):
+    def _cmd_greet(self, name: str = "") -> str:
+        """Greet, e.g., greeter:greet:Alice"""
+        return f"Hello, {name}!"
+
+# get_commands() returns:
+# {"greet": "Greet, e.g., greeter:greet:Alice"}
+```
+
+#### Dependency Injection
+
+Use `injected()` to declare dependencies:
+
+```python
+from app.core.di.container import injected
+
+class MyCell(BaseCell):
+    event_bus = injected(EventBus)  # Auto inject
+
+    def _cmd_do_something(self):
+        self.event_bus.publish("event.name")
+```
+
+#### Event Handling
+
+Use `@event` decorator to declare event handlers:
+
+```python
+from app.core.bus import event
+
+class MyCell(BaseCell):
+    @event("user.login")
+    def on_user_login(self, event_name, **kwargs):
+        """Handle user login event"""
+        print(f"User logged in: {kwargs.get('username')}")
+```
+
+### Component Interface Specification
+
+All components must implement the following methods (or inherit BaseCell):
 
 | Method | Return Type | Description |
 |--------|-------------|-------------|

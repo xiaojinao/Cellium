@@ -23,10 +23,11 @@ Frontend calls backend component methods, suitable for **request-response** scen
 
 ```python
 # Backend component
-class Greeter(ICell):
-    def execute(self, command: str, *args, **kwargs):
-        if command == "greet":
-            return f"{args[0]} Hallo Cellium"
+from app.core.interface.base_cell import BaseCell
+
+class Greeter(BaseCell):
+    def _cmd_greet(self, text: str = "") -> str:
+        return f"{text} Hallo Cellium"
 
 # Frontend call
 window.mbQuery(0, 'greeter:greet:Hello', function(){})
@@ -157,7 +158,9 @@ window.mbQuery(0, `user:create:${userInfo}`, function(customMsg, response) {
 
 **Backend component usage:**
 ```python
-class UserCell(ICell):
+from app.core.interface.base_cell import BaseCell
+
+class UserCell(BaseCell):
     def _cmd_create(self, user_data: dict):
         # user_data is directly a dict, no json.loads needed
         name = user_data.get('name')
@@ -166,31 +169,6 @@ class UserCell(ICell):
         
         # Processing logic...
         return f"User {name} created successfully, age {age}"
-```
-
-### Async Execution Support
-
-For time-consuming operations (file I/O, network requests), use async execution to avoid blocking UI:
-
-```python
-class FileCell(ICell):
-    def execute(self, command: str, *args, **kwargs):
-        if command == "read":
-            return self._handle_read(args[0], async_exec=True)
-        return super().execute(command, *args, **kwargs)
-
-    def _handle_read(self, filepath: str, async_exec: bool = False):
-        # Use async_exec=True to enable async execution
-        return self._execute_command("read_large_file", filepath, async_exec=async_exec)
-
-    def _execute_command(self, cmd: str, args, async_exec: bool = False):
-        """Execute command through framework, supports async"""
-        command = f"{self.cell_name}:{cmd}:{args}"
-        # When async_exec=True, command is submitted to thread pool
-        return self._framework_handler._handle_cell_command(command, async_exec=async_exec)
-```
-
-> 💡 **Async Execution Note**: When `async_exec=True` is set, the command is submitted to the thread pool, and the method immediately returns `"Task submitted to thread pool"`. The actual result is returned via event bus or other mechanisms.
 
 ## 2. Create Component File
 
@@ -208,31 +186,23 @@ Demonstrates basic Cellium framework usage:
 3. Frontend updates display with result
 """
 
-from app.core.interface.icell import ICell
+from app.core.interface.base_cell import BaseCell
 
 
-class Greeter(ICell):
+class Greeter(BaseCell):
     """Greeter component: receives text, appends suffix, and returns"""
-
+    
     @property
     def cell_name(self) -> str:
         """Component identifier used for frontend calls"""
         return "greeter"
-
-    def execute(self, command: str, *args, **kwargs):
-        """Automatically maps commands to methods starting with _cmd_"""
-        method_name = f"_cmd_{command}"
-        if hasattr(self, method_name):
-            method = getattr(self, method_name)
-            return method(*args, **kwargs)
-        return f"Cell '{self.cell_name}' has no command: {command}"
-
+    
     def get_commands(self) -> dict:
         """Returns available command list"""
         return {
             "greet": "Add greeting suffix, e.g., greeter:greet:Hello"
         }
-
+    
     def _cmd_greet(self, text: str = "") -> str:
         """Add Hallo Cellium suffix"""
         if not text:
@@ -240,15 +210,21 @@ class Greeter(ICell):
         return f"{text} Hallo Cellium"
 ```
 
-## 2. Component Structure Analysis
+## 3. Component Structure Analysis
 
-Each Cellium component must inherit from the `ICell` interface and implement three core methods:
+Cellium recommends using `BaseCell` as the component base class, which already implements the core `ICell` interface logic:
 
-| Method | Description |
-|--------|-------------|
-| `cell_name` | Component identifier (lowercase), used for frontend `window.mbQuery()` calls |
-| `execute(command, *args)` | Execute specific command, `command` is the command name, `*args` are parameters |
-| `get_commands()` | Returns command description dictionary for frontend reference |
+**BaseCell Auto-Handles:**
+- `execute`: automatically maps commands to `_cmd_` prefixed methods
+- `get_commands`: automatically scans `_cmd_` method docstrings
+- `cell_name`: defaults to lowercase class name
+- Event registration: automatically calls `register_component_handlers()`
+
+| Feature | Description |
+|---------|-------------|
+| Command Mapping | `greet` → `_cmd_greet()` |
+| Command List | Auto-extracted from docstring |
+| Component Name | Default `greeter` (lowercase class name) |
 
 Execution Flow:
 
@@ -261,7 +237,7 @@ flowchart LR
     E --> F["Return<br>'Hello Hallo Cellium'"]
 ```
 
-> 💡 **Cell Lifecycle Note**: Although Greeter is simple, since it inherits from `ICell`, it automatically has framework-injected `self.logger` and `self.bus`. You can use them directly in command methods:
+> 💡 **Cell Lifecycle Note**: Since Greeter inherits from `BaseCell`, it automatically has framework-injected `self.mp_manager`, `self.logger`, and `self.event_bus`. You can use them directly in command methods:
 > ```python
 > def _cmd_greet(self, text: str = "") -> str:
 >     self.logger.info(f"Received greeting request: {text}")
@@ -404,35 +380,30 @@ sequenceDiagram
 
 ## 7. Extended Features
 
-Greeter component also supports reversing text functionality. Simply add new `_cmd_` methods to extend functionality without modifying the main `execute` logic:
+Greeter component also supports reversing text functionality. Simply add new `_cmd_` methods to extend functionality without modifying the main `execute` logic (BaseCell handles command mapping automatically):
 
 ```python
-def execute(self, command: str, *args, **kwargs):
-    """Automatically maps commands to methods starting with _cmd_"""
-    method_name = f"_cmd_{command}"
-    if hasattr(self, method_name):
-        method = getattr(self, method_name)
-        return method(*args, **kwargs)
-    return f"Cell '{self.cell_name}' has no command: {command}"
+from app.core.interface.base_cell import BaseCell
 
-def get_commands(self) -> dict:
-    return {
-        "greet": "Add greeting suffix, e.g., greeter:greet:Hello",
-        "reverse": "Reverse and add greeting suffix, e.g., greeter:reverse:Hello"
-    }
-
-def _cmd_greet(self, text: str = "") -> str:
-    """Add Hallo Cellium suffix"""
-    if not text:
-        return "Hallo Cellium"
-    return f"{text} Hallo Cellium"
-
-def _cmd_reverse(self, text: str = "") -> str:
-    """Reverse text and add greeting suffix"""
-    if not text:
-        return "Hallo Cellium"
-    reversed_text = text[::-1]
-    return f"{reversed_text} Hallo Cellium"
+class Greeter(BaseCell):
+    def get_commands(self) -> dict:
+        return {
+            "greet": "Add greeting suffix, e.g., greeter:greet:Hello",
+            "reverse": "Reverse and add greeting suffix, e.g., greeter:reverse:Hello"
+        }
+    
+    def _cmd_greet(self, text: str = "") -> str:
+        """Add Hallo Cellium suffix"""
+        if not text:
+            return "Hallo Cellium"
+        return f"{text} Hallo Cellium"
+    
+    def _cmd_reverse(self, text: str = "") -> str:
+        """Reverse text and add greeting suffix"""
+        if not text:
+            return "Hallo Cellium"
+        reversed_text = text[::-1]
+        return f"{reversed_text} Hallo Cellium"
 ```
 
 Frontend call:
@@ -453,10 +424,13 @@ During development, you can view component call logs:
 import logging
 logger = logging.getLogger(__name__)
 
-class Greeter(ICell):
-    def execute(self, command: str, *args, **kwargs):
-        logger.info(f"[Greeter] Received command: {command}, args: {args}")
+from app.core.interface.base_cell import BaseCell
+
+class Greeter(BaseCell):
+    def _cmd_greet(self, text: str = "") -> str:
+        logger.info(f"[Greeter] Received command: greet, args: {text}")
         # ... processing logic
+        result = f"{text} Hallo Cellium"
         logger.info(f"[Greeter] Returned result: {result}")
         return result
 ```
@@ -464,7 +438,7 @@ class Greeter(ICell):
 Startup log output example:
 
 ```
-[INFO] [Greeter] Received command: greet, args: ('Hello',)
+[INFO] [Greeter] Received command: greet, args: Hello
 [INFO] [Greeter] Returned result: Hello Hallo Cellium
 ```
 
@@ -479,33 +453,37 @@ enabled_components:
   - app.components.greeter.Greeter  # Must be the complete module path
 ```
 
-**Q: Frontend shows "Unknown command"?**
+**Q: Frontend shows command not found?**
 
-Ensure the command name matches the check in the `execute` method:
+Ensure the command name matches the `_cmd_` method name:
 
 ```python
-# In component
-if command == "greet":  # Here is "greet"
+# Method defined in component
+def _cmd_greet(self):  # Command name is "greet"
 
 # Frontend call
-window.mbQuery(0, 'greeter:greet:xxx', function(){})  # Must also use "greet"
+window.mbQuery(0, 'greeter:greet:xxx', function(){})  # Use "greet"
 ```
+
+If a command doesn't exist, the framework throws a `CommandNotFoundError` exception and returns an error message.
 
 **Q: How to pass multiple arguments?**
 
-Since the protocol passes Args as a single string, parse multiple arguments within the component:
+Since the protocol passes Args as a single string, use JSON format for multiple arguments:
 
 ```python
-# Component
-def execute(self, command: str, *args, **kwargs):
-    if command == "greet":
-        full_args = args[0] if args else ""  # "Alice:Hello"
-        parts = full_args.split(':')  # Parse internally
-        name = parts[0]  # "Alice"
-        prefix = parts[1] if len(parts) > 1 else "Hello"  # "Hello"
-
 # Frontend
-window.mbQuery(0, 'greeter:greet:Alice:Hello', function(){})
+let data = JSON.stringify({name: "Alice", prefix: "Hello"});
+window.mbQuery(0, `greeter:greet:${data}`, function(){})
+
+# Component
+from app.core.interface.base_cell import BaseCell
+
+class Greeter(BaseCell):
+    def _cmd_greet(self, data: dict) -> str:
+        name = data.get('name', '')
+        prefix = data.get('prefix', 'Hello')
+        return f"{name} {prefix} Hallo Cellium"
 ```
 
 ## 10. Complete File List
@@ -518,4 +496,4 @@ Files created in this tutorial:
 | `config/settings.yaml` | Component configuration file (needs modification) |
 | `index.html` | Frontend page (needs modification or creation) |
 
-Through this tutorial, you've mastered the basic flow of Cellium component development. Similarly, you can create components with any functionality by inheriting from the `ICell` interface and implementing the three core methods.
+Through this tutorial, you've mastered the basic flow of Cellium component development. Similarly, you can create components with any functionality by inheriting from `BaseCell` and defining methods with the `_cmd_` prefix.

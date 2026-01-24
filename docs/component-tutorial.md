@@ -23,10 +23,11 @@ Cellium 支持两种通信模式，开发者可以根据场景选择：
 
 ```python
 # 后端组件
-class Greeter(ICell):
-    def execute(self, command: str, *args, **kwargs):
-        if command == "greet":
-            return f"{args[0]} Hallo Cellium"
+from app.core.interface.base_cell import BaseCell
+
+class Greeter(BaseCell):
+    def _cmd_greet(self, text: str = "") -> str:
+        return f"{text} Hallo Cellium"
 
 # 前端调用
 window.mbQuery(0, 'greeter:greet:你好', function(){})
@@ -155,7 +156,9 @@ window.mbQuery(0, `user:create:${userInfo}`, function(customMsg, response) {
 
 **后端组件直接使用：**
 ```python
-class UserCell(ICell):
+from app.core.interface.base_cell import BaseCell
+
+class UserCell(BaseCell):
     def _cmd_create(self, user_data: dict):
         # user_data 直接是 dict，无需 json.loads
         name = user_data.get('name')
@@ -164,31 +167,6 @@ class UserCell(ICell):
         
         # 处理逻辑...
         return f"用户 {name} 创建成功，年龄 {age}"
-```
-
-### 异步执行支持
-
-对于耗时操作（如文件读写、网络请求），可以使用异步执行避免阻塞 UI：
-
-```python
-class FileCell(ICell):
-    def execute(self, command: str, *args, **kwargs):
-        if command == "read":
-            return self._handle_read(args[0], async_exec=True)
-        return super().execute(command, *args, **kwargs)
-
-    def _handle_read(self, filepath: str, async_exec: bool = False):
-        # 使用 async_exec=True 启用异步执行
-        return self._execute_command("read_large_file", filepath, async_exec=async_exec)
-
-    def _execute_command(self, cmd: str, args, async_exec: bool = False):
-        """通过框架执行命令，支持异步"""
-        command = f"{self.cell_name}:{cmd}:{args}"
-        # async_exec=True 时，命令会提交到线程池执行
-        return self._framework_handler._handle_cell_command(command, async_exec=async_exec)
-```
-
-> 💡 **异步执行说明**：设置 `async_exec=True` 后，命令会提交到线程池执行，方法立即返回 `"Task submitted to thread pool"`。实际结果通过事件总线或其他机制返回。
 
 ## 2. 创建组件文件
 
@@ -206,31 +184,23 @@ Greeter 组件示例
 3. 前端更新显示结果
 """
 
-from app.core.interface.icell import ICell
+from app.core.interface.base_cell import BaseCell
 
 
-class Greeter(ICell):
+class Greeter(BaseCell):
     """问候组件：接收文字，添加后缀后返回"""
-
+    
     @property
     def cell_name(self) -> str:
         """组件唯一标识，用于前端调用"""
         return "greeter"
-
-    def execute(self, command: str, *args, **kwargs):
-        """自动映射命令到以 _cmd_ 开头的方法"""
-        method_name = f"_cmd_{command}"
-        if hasattr(self, method_name):
-            method = getattr(self, method_name)
-            return method(*args, **kwargs)
-        return f"Cell '{self.cell_name}' has no command: {command}"
-
+    
     def get_commands(self) -> dict:
         """返回可用命令列表"""
         return {
             "greet": "添加问候后缀，例如: greeter:greet:你好"
         }
-
+    
     def _cmd_greet(self, text: str = "") -> str:
         """添加 Hallo Cellium 后缀"""
         if not text:
@@ -238,15 +208,21 @@ class Greeter(ICell):
         return f"{text} Hallo Cellium"
 ```
 
-## 2. 组件结构解析
+## 3. 组件结构解析
 
-每个 Cellium 组件必须继承 `ICell` 接口，并实现三个核心方法：
+Cellium 推荐使用 `BaseCell` 作为组件基类，它已经实现了 `ICell` 接口的核心逻辑：
 
-| 方法 | 说明 |
+**BaseCell 自动处理：**
+- `execute`：自动将命令映射到 `_cmd_` 前缀的方法
+- `get_commands`：自动扫描 `_cmd_` 方法的文档字符串
+- `cell_name`：默认为类名的小写形式
+- 事件注册：自动调用 `register_component_handlers()`
+
+| 特性 | 说明 |
 |------|------|
-| `cell_name` | 组件唯一标识，小写字母，用于前端 `window.mbQuery()` 调用 |
-| `execute(command, *args)` | 执行具体命令，`command` 是命令名，`*args` 是参数 |
-| `get_commands()` | 返回命令说明字典，供前端参考 |
+| 命令映射 | `greet` → `_cmd_greet()` |
+| 命令列表 | 自动从 docstring 提取 |
+| 组件名称 | 默认 `greeter`（类名小写） |
 
 执行流程：
 
@@ -259,7 +235,7 @@ flowchart LR
     E --> F["返回<br>'你好 Hallo Cellium'"]
 ```
 
-> 💡 **细胞生命周期提示**：虽然 Greeter 很简单，但由于它继承自 `ICell`，它已经自动获得了框架注入的 `self.logger` 和 `self.bus`。你可以在命令方法里直接使用：
+> 💡 **细胞生命周期提示**：由于 Greeter 继承自 `BaseCell`，它已经自动获得了框架注入的 `self.mp_manager`、`self.logger` 和 `self.event_bus`。你可以在命令方法里直接使用：
 > ```python
 > def _cmd_greet(self, text: str = "") -> str:
 >     self.logger.info(f"收到问候请求: {text}")
@@ -402,35 +378,30 @@ sequenceDiagram
 
 ## 7. 扩展功能
 
-Greeter 组件还支持反转文字功能。只需添加新的 `_cmd_` 方法即可扩展功能，无需修改 `execute` 主逻辑：
+Greeter 组件还支持反转文字功能。只需添加新的 `_cmd_` 方法即可扩展功能，无需修改 `execute` 主逻辑（BaseCell 自动处理命令映射）：
 
 ```python
-def execute(self, command: str, *args, **kwargs):
-    """自动映射命令到以 _cmd_ 开头的方法"""
-    method_name = f"_cmd_{command}"
-    if hasattr(self, method_name):
-        method = getattr(self, method_name)
-        return method(*args, **kwargs)
-    return f"Cell '{self.cell_name}' has no command: {command}"
+from app.core.interface.base_cell import BaseCell
 
-def get_commands(self) -> dict:
-    return {
-        "greet": "添加问候后缀，例如: greeter:greet:你好",
-        "reverse": "反转并添加问候后缀，例如: greeter:reverse:你好"
-    }
-
-def _cmd_greet(self, text: str = "") -> str:
-    """添加 Hallo Cellium 后缀"""
-    if not text:
-        return "Hallo Cellium"
-    return f"{text} Hallo Cellium"
-
-def _cmd_reverse(self, text: str = "") -> str:
-    """反转文字并添加问候后缀"""
-    if not text:
-        return "Hallo Cellium"
-    reversed_text = text[::-1]
-    return f"{reversed_text} Hallo Cellium"
+class Greeter(BaseCell):
+    def get_commands(self) -> dict:
+        return {
+            "greet": "添加问候后缀，例如: greeter:greet:你好",
+            "reverse": "反转并添加问候后缀，例如: greeter:reverse:你好"
+        }
+    
+    def _cmd_greet(self, text: str = "") -> str:
+        """添加 Hallo Cellium 后缀"""
+        if not text:
+            return "Hallo Cellium"
+        return f"{text} Hallo Cellium"
+    
+    def _cmd_reverse(self, text: str = "") -> str:
+        """反转文字并添加问候后缀"""
+        if not text:
+            return "Hallo Cellium"
+        reversed_text = text[::-1]
+        return f"{reversed_text} Hallo Cellium"
 ```
 
 前端调用方式：
@@ -451,10 +422,13 @@ window.mbQuery(0, 'greeter:reverse:Cellium', function(customMsg, response) {
 import logging
 logger = logging.getLogger(__name__)
 
-class Greeter(ICell):
-    def execute(self, command: str, *args, **kwargs):
-        logger.info(f"[Greeter] 收到命令: {command}, 参数: {args}")
+from app.core.interface.base_cell import BaseCell
+
+class Greeter(BaseCell):
+    def _cmd_greet(self, text: str = "") -> str:
+        logger.info(f"[Greeter] 收到命令: greet, 参数: {text}")
         # ... 处理逻辑
+        result = f"{text} Hallo Cellium"
         logger.info(f"[Greeter] 返回结果: {result}")
         return result
 ```
@@ -462,7 +436,7 @@ class Greeter(ICell):
 启动日志输出示例：
 
 ```
-[INFO] [Greeter] 收到命令: greet, 参数: ('你好',)
+[INFO] [Greeter] 收到命令: greet, 参数: 你好
 [INFO] [Greeter] 返回结果: 你好 Hallo Cellium
 ```
 
@@ -477,33 +451,37 @@ enabled_components:
   - app.components.greeter.Greeter  # 必须是完整的模块路径
 ```
 
-**问：前端调用显示「Unknown command」？**
+**问：前端调用显示命令不存在？**
 
-确保命令名与 `execute` 方法中的判断一致：
+确保命令名与 `_cmd_` 方法名匹配：
 
 ```python
-# 组件中
-if command == "greet":  # 这里是 "greet"
+# 组件中定义的方法
+def _cmd_greet(self):  # 命令名是 "greet"
 
 # 前端调用
-window.mbQuery(0, 'greeter:greet:xxx', function(){})  # 也要用 "greet"
+window.mbQuery(0, 'greeter:greet:xxx', function(){})  # 使用 "greet"
 ```
+
+如果命令不存在，框架会抛出 `CommandNotFoundError` 异常，返回错误信息。
 
 **问：如何传递多个参数？**
 
-由于协议将 Args 整体作为单个字符串传入，如需多个参数，请在组件内部拆分：
+由于协议将 Args 整体作为单个字符串传入，如需多个参数，请用 JSON 格式传递：
 
 ```python
-# 组件
-def execute(self, command: str, *args, **kwargs):
-    if command == "greet":
-        full_args = args[0] if args else ""  # "Alice:Hello"
-        parts = full_args.split(':')  # 自行拆分
-        name = parts[0]  # "Alice"
-        prefix = parts[1] if len(parts) > 1 else "Hello"  # "Hello"
-
 # 前端
-window.mbQuery(0, 'greeter:greet:Alice:Hello', function(){})
+let data = JSON.stringify({name: "Alice", prefix: "Hello"});
+window.mbQuery(0, `greeter:greet:${data}`, function(){})
+
+# 组件
+from app.core.interface.base_cell import BaseCell
+
+class Greeter(BaseCell):
+    def _cmd_greet(self, data: dict) -> str:
+        name = data.get('name', '')
+        prefix = data.get('prefix', 'Hello')
+        return f"{name} {prefix} Hallo Cellium"
 ```
 
 ## 10. 完整文件清单
@@ -516,4 +494,4 @@ window.mbQuery(0, 'greeter:greet:Alice:Hello', function(){})
 | `config/settings.yaml` | 组件配置文件（需修改） |
 | `index.html` | 前端页面（需修改或新建） |
 
-通过本教程，你已经掌握了 Cellium 组件开发的基本流程。类似的，你可以创建任意功能的组件，只需继承 `ICell` 接口并实现三个核心方法即可。
+通过本教程，你已经掌握了 Cellium 组件开发的基本流程。类似的，你可以创建任意功能的组件，只需继承 `BaseCell` 并定义 `_cmd_` 前缀的方法即可。
