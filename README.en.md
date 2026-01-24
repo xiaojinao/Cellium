@@ -32,6 +32,8 @@
 
 Based on "Core-Driven, Module Decoupling" philosophy, connecting Python backend with Web frontend through a lightweight micro-kernel.
 
+**Cellium does not attempt to hide system complexity, but concentrates the complexity in the microkernel, in exchange for a minimalist development experience at the component layer.**
+
 | Feature | Description |
 |---------|-------------|
 | **Core-Driven** | Micro-kernel unified scheduling, developers focus on business logic |
