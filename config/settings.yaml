@@ -3,4 +3,4 @@
 enabled_components:
   - app.components.calculator.Calculator
   - app.components.greeter.Greeter
-  - app.components.jsontest.JsonTestCell
+  - app.components.jsontest.JsonTest

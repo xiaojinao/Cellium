@@ -120,7 +120,7 @@ def load_components(container: DIContainer, debug: bool = False) -> Dict[str, An
             container.register(component_class, instance)
             loaded_components[component_name] = instance
             
-            if isinstance(instance, ICell):
+            if hasattr(instance, 'cell_name') and hasattr(instance, 'execute'):
                 register_cell(instance)
                 logger.info(f"已加载组件: {component_name} (cell_name: {instance.cell_name})")
             else:

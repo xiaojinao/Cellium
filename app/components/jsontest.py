@@ -10,35 +10,13 @@
 
 import json
 import logging
-from app.core.interface.icell import ICell
+from app.core.interface.base_cell import BaseCell
 
 logger = logging.getLogger(__name__)
 
 
-class JsonTestCell(ICell):
+class JsonTest(BaseCell):
     """JSON 混合模式测试组件"""
-    
-    @property
-    def cell_name(self) -> str:
-        return "jsontest"
-    
-    def execute(self, command: str, *args, **kwargs):
-        """执行命令分发"""
-        logger.info(f"[JsonTest] 收到命令: {command}, 参数: {args}")
-        
-        if command == "echo":
-            result = self._cmd_echo(args[0] if args else "")
-        elif command == "greet":
-            result = self._cmd_greet(args[0] if args else {})
-        elif command == "batch":
-            result = self._cmd_batch(args[0] if args else [])
-        elif command == "complex":
-            result = self._cmd_complex(args[0] if args else {})
-        else:
-            result = f"Unknown command: {command}"
-        
-        logger.info(f"[JsonTest] 返回结果: {result}")
-        return result
     
     def _cmd_echo(self, text: str) -> str:
         """简单字符串参数"""

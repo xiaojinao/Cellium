@@ -41,24 +41,23 @@ def generate_component(name: str) -> str:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
-from app.core.interface.icell import ICell
-from app.core.bus import event, event_bus, register_component_handlers
-from app.core.bus.events import EventType
+from typing import Any, Dict
+from app.core.interface.base_cell import BaseCell
+from app.core.bus import event
 
 logger = logging.getLogger(__name__)
 
 
-class {class_name}(ICell):
+class {class_name}(BaseCell):
     """
     {class_name} 组件
 
     Cellium 组件开发说明：
 
-    1. 必须实现 ICell 接口
-       - cell_name: 组件唯一标识（小写字母）
-       - execute(): 处理前端命令
-       - get_commands(): 返回可用命令列表
+    1. 继承 BaseCell 后自动实现 ICell 接口
+       - cell_name: 默认为类名小写，可重写
+       - execute(): 自动映射 _cmd_* 方法
+       - get_commands(): 自动收集 _cmd_* 方法的文档
 
     2. 可选特性
        - @event 装饰器: 订阅事件
@@ -68,38 +67,16 @@ class {class_name}(ICell):
     """
 
     def __init__(self):
-        register_component_handlers(self)
+        super().__init__()
         self._internal_state = None
 
-    @property
-    def cell_name(self) -> str:
-        return "{component_name}"
-
-    def execute(self, command: str, *args, **kwargs) -> Any:
-        """执行命令"""
-        method_name = f"_cmd_{{command}}"
-        if hasattr(self, method_name):
-            method = getattr(self, method_name)
-            return method(*args, **kwargs)
-        return {{"error": f"Unknown command: {{command}}"}}
-
-    def get_commands(self) -> Dict[str, str]:
-        """返回可用命令列表"""
-        return {{
-            "example": "示例，例如: {component_name}:example:参数",
-            "greet": "打招呼，例如: {component_name}:greet:姓名",
-            "get_data": "获取数据，例如: {component_name}:get_data",
-            "set_data": "设置数据，例如: {component_name}:set_data:值",
-            "process": "处理数据，例如: {component_name}:process:数据"
-        }}
-
     def _cmd_example(self, *args, **kwargs) -> str:
-        """示例命令"""
+        """示例命令，例如: {component_name}:example:参数"""
         param = args[0] if args else "World"
         return f"Hello {{param}} from {component_name}!"
 
     def _cmd_greet(self, *args, **kwargs) -> Dict[str, Any]:
-        """打招呼命令"""
+        """打招呼，例如: {component_name}:greet:姓名"""
         name = args[0] if args else "Guest"
         return {{
             "message": f"Welcome, {{name}}!",
@@ -108,14 +85,14 @@ class {class_name}(ICell):
         }}
 
     def _cmd_get_data(self, *args, **kwargs) -> Dict[str, Any]:
-        """获取数据"""
+        """获取数据，例如: {component_name}:get_data"""
         return {{
             "state": self._internal_state,
             "component": self.cell_name
         }}
 
     def _cmd_set_data(self, *args, **kwargs) -> Dict[str, Any]:
-        """设置数据"""
+        """设置数据，例如: {component_name}:set_data:值"""
         value = args[0] if args else None
         self._internal_state = value
         return {{
@@ -124,7 +101,7 @@ class {class_name}(ICell):
         }}
 
     def _cmd_process(self, *args, **kwargs) -> Dict[str, Any]:
-        """处理数据"""
+        """处理数据，例如: {component_name}:process:数据"""
         data = args[0] if args else ""
         result = {{"processed": data, "length": len(data)}}
         return result
