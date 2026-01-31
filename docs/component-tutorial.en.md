@@ -80,6 +80,7 @@ window.mbQuery(0, 'cell:command:args', function(){})
 
 | Component | Description | Example |
 |-----------|-------------|---------|
+| **0** | Callback ID (fixed to 0, internal use) | `0` |
 | **Cell** | Target cell name (component identifier) | `greeter` |
 | **Command** | Action to be executed by the cell | `greet` |
 | **Args** | Arguments passed to the action (**passed as a single string**) | `Hello` |
@@ -140,6 +141,13 @@ def _cmd_update(self, data: dict):
 | Array | JSON serialization | `list` type |
 
 > 💡 **Auto-Parse Rule**: The core layer `MessageHandler` automatically detects if Args starts with `{` or `[`, and if so, attempts to parse as JSON. The component's `execute` method receives the parsed object (dict/list), not the raw string.
+>
+> **Parsing Logic:**
+> - Starts with `{` → Attempts to parse as `dict`
+> - Starts with `[` → Attempts to parse as `list`
+> - Other cases → Keeps as raw string
+>
+> **Note**: If JSON parsing fails, it falls back to the raw string without throwing an exception.
 
 ### Auto JSON Parse Example
 
@@ -191,20 +199,9 @@ from app.core.interface.base_cell import BaseCell
 
 class Greeter(BaseCell):
     """Greeter component: receives text, appends suffix, and returns"""
-    
-    @property
-    def cell_name(self) -> str:
-        """Component identifier used for frontend calls"""
-        return "greeter"
-    
-    def get_commands(self) -> dict:
-        """Returns available command list"""
-        return {
-            "greet": "Add greeting suffix, e.g., greeter:greet:Hello"
-        }
-    
+
     def _cmd_greet(self, text: str = "") -> str:
-        """Add Hallo Cellium suffix"""
+        """Add greeting suffix, e.g., greeter:greet:Hello"""
         if not text:
             return "Hallo Cellium"
         return f"{text} Hallo Cellium"
@@ -214,10 +211,30 @@ class Greeter(BaseCell):
 
 Cellium recommends using `BaseCell` as the component base class, which already implements the core `ICell` interface logic:
 
-**BaseCell Auto-Handles:**
+### Command Method Naming Rules
+
+All command methods callable by the frontend must start with `_cmd_`:
+
+```python
+def _cmd_greet(self, text: str = "") -> str:
+    """Add greeting suffix, e.g., greeter:greet:Hello"""
+    return f"{text} Hallo Cellium"
+```
+
+**Naming Rules:**
+- Method name format: `_cmd_<command_name>`
+- Frontend call format: `component_name:command_name:arguments`
+- Example: `_cmd_greet` → Frontend calls `greeter:greet:Hello`
+
+**Docstring Purpose:**
+- The method's docstring is automatically used as the command description in `get_commands()`
+- Recommended format: `"Command description, e.g., component_name:command_name:example_args"`
+
+### BaseCell Auto-Handles
+
 - `execute`: automatically maps commands to `_cmd_` prefixed methods
 - `get_commands`: automatically scans `_cmd_` method docstrings
-- `cell_name`: defaults to lowercase class name
+- `cell_name`: defaults to lowercase class name (e.g., `Greeter` → `greeter`)
 - Event registration: automatically calls `register_component_handlers()`
 
 | Feature | Description |
