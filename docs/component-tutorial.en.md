@@ -177,6 +177,7 @@ class UserCell(BaseCell):
         
         # Processing logic...
         return f"User {name} created successfully, age {age}"
+```
 
 ## 2. Create Component File
 

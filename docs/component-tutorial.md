@@ -175,6 +175,7 @@ class UserCell(BaseCell):
         
         # 处理逻辑...
         return f"用户 {name} 创建成功，年龄 {age}"
+```
 
 ## 2. 创建组件文件
 
@@ -259,7 +260,7 @@ flowchart LR
 >     return f"{text} Hallo Cellium"
 > ```
 
-## 3. 注册组件
+## 4. 注册组件
 
 编辑 `config/settings.yaml`，将新组件添加到配置中：
 
@@ -276,7 +277,7 @@ enabled_components:
 [INFO] 已加载组件: Greeter (cell_name: greeter)
 ```
 
-## 4. 前端集成
+## 5. 前端集成
 
 在 HTML 中添加输入框和按钮，调用新组件：
 
@@ -359,7 +360,7 @@ enabled_components:
 </html>
 ```
 
-## 5. 完整交互流程
+## 6. 完整交互流程
 
 以下是完整的交互时序图：
 
@@ -384,7 +385,7 @@ sequenceDiagram
     F->>F: 8. 更新页面显示结果
 ```
 
-## 6. 运行效果
+## 7. 运行效果
 
 | 步骤 | 前端操作 | 后端处理 | 显示结果 |
 |------|----------|----------|----------|
@@ -393,7 +394,7 @@ sequenceDiagram
 | 3 | — | 返回「你好 Hallo Cellium」 | — |
 | 4 | 回调函数执行 | — | 「你好 Hallo Cellium」 |
 
-## 7. 扩展功能
+## 8. 扩展功能
 
 Greeter 组件还支持反转文字功能。只需添加新的 `_cmd_` 方法即可扩展功能，无需修改 `execute` 主逻辑（BaseCell 自动处理命令映射）：
 
@@ -431,7 +432,7 @@ window.mbQuery(0, 'greeter:reverse:Cellium', function(customMsg, response) {
 // 结果: "malloC Hallo Cellium"
 ```
 
-## 8. 调试技巧
+## 9. 调试技巧
 
 开发过程中，可以通过日志查看组件调用情况：
 
@@ -457,7 +458,7 @@ class Greeter(BaseCell):
 [INFO] [Greeter] 返回结果: 你好 Hallo Cellium
 ```
 
-## 9. 常见问题
+## 10. 常见问题
 
 **问：组件加载失败怎么办？**
 
@@ -501,7 +502,7 @@ class Greeter(BaseCell):
         return f"{name} {prefix} Hallo Cellium"
 ```
 
-## 10. 完整文件清单
+## 11. 完整文件清单
 
 本教程创建的文件：
 
