@@ -127,24 +127,24 @@ class ComponentLinter:
         return result
 
     def _check_icell_import(self, tree: ast.AST) -> bool:
-        """检查是否导入了 ICell"""
+        """检查是否导入了 ICell 或 BaseCell"""
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom):
-                if node.module and "icell" in node.module.lower():
+                if node.module and ("icell" in node.module.lower() or "base_cell" in node.module.lower()):
                     return True
         return False
 
     def _find_icell_subclasses(self, tree: ast.AST) -> Dict[str, ast.ClassDef]:
-        """查找继承自 ICell 的类"""
+        """查找继承自 ICell 或 BaseCell 的类"""
         subclasses = {}
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
                 for base in node.bases:
                     if isinstance(base, ast.Attribute):
-                        if hasattr(base, 'attr') and base.attr == 'ICell':
+                        if hasattr(base, 'attr') and base.attr in ('ICell', 'BaseCell'):
                             subclasses[node.name] = node
                     elif isinstance(base, ast.Name):
-                        if base.id == 'ICell':
+                        if base.id in ('ICell', 'BaseCell'):
                             subclasses[node.name] = node
         return subclasses
 
@@ -156,52 +156,69 @@ class ComponentLinter:
                 classes[node.name] = node
         return classes
 
+    def _is_basecell_subclass(self, class_def: ast.ClassDef) -> bool:
+        """检查类是否继承自 BaseCell"""
+        for base in class_def.bases:
+            if isinstance(base, ast.Attribute):
+                if hasattr(base, 'attr') and base.attr == 'BaseCell':
+                    return True
+            elif isinstance(base, ast.Name):
+                if base.id == 'BaseCell':
+                    return True
+        return False
+
     def _check_class(self, file_path: Path, class_name: str,
                      class_def: ast.ClassDef, tree: ast.AST, result: Dict):
         """检查单个类"""
         methods = {node.name: node for node in class_def.body
                    if isinstance(node, ast.FunctionDef)}
 
-        if 'cell_name' not in methods:
-            has_property = any(
-                isinstance(node, ast.FunctionDef) and
-                any(decorator.id == 'property'
-                    for decorator in node.decorator_list
-                    if isinstance(decorator, ast.Name))
-                for node in class_def.body
-                if isinstance(node, ast.FunctionDef) and node.name == 'cell_name'
-            )
-            if not has_property:
-                result["warnings"].append(f"类 {class_name}: 未找到 'cell_name' 属性或 property")
-        else:
-            cell_name_value = self._get_cell_name_value(methods['cell_name'])
-            if cell_name_value:
-                result["cell_name_values"].append((cell_name_value, class_name))
-                if not cell_name_value.islower():
-                    result["warnings"].append(
-                        f"类 {class_name}: cell_name '{cell_name_value}' 建议使用小写字母"
-                    )
+        is_basecell_subclass = self._is_basecell_subclass(class_def)
 
-        if 'execute' not in methods:
-            result["errors"].append(f"类 {class_name}: 缺少 'execute' 方法")
-            result["status"] = "fail"
-        else:
-            self._check_execute_signature(class_name, methods['execute'], result)
+        if not is_basecell_subclass:
+            if 'cell_name' not in methods:
+                has_property = any(
+                    isinstance(node, ast.FunctionDef) and
+                    any(decorator.id == 'property'
+                        for decorator in node.decorator_list
+                        if isinstance(decorator, ast.Name))
+                    for node in class_def.body
+                    if isinstance(node, ast.FunctionDef) and node.name == 'cell_name'
+                )
+                if not has_property:
+                    result["warnings"].append(f"类 {class_name}: 未找到 'cell_name' 属性或 property")
+            else:
+                cell_name_value = self._get_cell_name_value(methods['cell_name'])
+                if cell_name_value:
+                    result["cell_name_values"].append((cell_name_value, class_name))
+                    if not cell_name_value.islower():
+                        result["warnings"].append(
+                            f"类 {class_name}: cell_name '{cell_name_value}' 建议使用小写字母"
+                        )
 
-        if 'get_commands' not in methods:
-            result["warnings"].append(f"类 {class_name}: 未找到 'get_commands' 方法")
-        else:
-            self._check_get_commands_signature(class_name, methods['get_commands'], result)
+            if 'execute' not in methods:
+                result["errors"].append(f"类 {class_name}: 缺少 'execute' 方法")
+                result["status"] = "fail"
+            else:
+                self._check_execute_signature(class_name, methods['execute'], result)
 
-        if 'cell_name' in methods:
-            cell_name_method = methods['cell_name']
-            if cell_name_method.returns:
-                type_name = ast.unparse(cell_name_method.returns) if hasattr(ast, 'unparse') else ""
-                if 'str' not in type_name.lower():
-                    result["warnings"].append(f"类 {class_name}: 'cell_name' 应返回 str 类型")
+            if 'get_commands' not in methods:
+                result["warnings"].append(f"类 {class_name}: 未找到 'get_commands' 方法")
+            else:
+                self._check_get_commands_signature(class_name, methods['get_commands'], result)
+
+            if 'cell_name' in methods:
+                cell_name_method = methods['cell_name']
+                if cell_name_method.returns:
+                    type_name = ast.unparse(cell_name_method.returns) if hasattr(ast, 'unparse') else ""
+                    if 'str' not in type_name.lower():
+                        result["warnings"].append(f"类 {class_name}: 'cell_name' 应返回 str 类型")
 
         self._check_injected_properties(class_name, class_def, tree, result)
         self._check_decorators(class_name, class_def, result)
+
+        if is_basecell_subclass:
+            self._check_basecell_commands(class_name, class_def, result)
 
     def _get_cell_name_value(self, method: ast.FunctionDef) -> str:
         """尝试获取 cell_name 的返回值（静态分析）"""
@@ -325,6 +342,30 @@ class ComponentLinter:
             result['name'] = decorator.id
 
         return result
+
+    def _check_basecell_commands(self, class_name: str, class_def: ast.ClassDef, result: Dict):
+        """检查 BaseCell 子类的命令方法"""
+        command_prefix = "_cmd_"
+        commands = []
+
+        for node in class_def.body:
+            if isinstance(node, ast.FunctionDef) and node.name.startswith(command_prefix):
+                cmd_name = node.name[len(command_prefix):]
+                commands.append(cmd_name)
+
+                if not node.__doc__:
+                    result["warnings"].append(
+                        f"类 {class_name}.{node.name}: 建议添加文档字符串说明命令用途"
+                    )
+
+        if commands:
+            result["info"].append(
+                f"类 {class_name}: 检测到 {len(commands)} 个命令方法: {', '.join(commands)}"
+            )
+        else:
+            result["info"].append(
+                f"类 {class_name}: 未定义命令方法（以 _cmd_ 开头）"
+            )
 
     def print_report(self):
         """打印审查报告"""
