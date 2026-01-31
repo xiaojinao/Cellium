@@ -3,7 +3,6 @@
 应用程序主入口
 """
 import sys
-import io
 
 from app.core import MainWindow, setup_di_container
 from app.core.util import load_components
@@ -13,7 +12,7 @@ from app.core.util.logger import setup_logger
 def _ensure_utf8_encoding():
     for stream in (sys.stdout, sys.stderr):
         if stream.encoding.lower() != 'utf-8':
-            setattr(sys, stream.name, io.TextIOWrapper(stream.buffer, encoding='utf-8'))
+            stream.reconfigure(encoding='utf-8')
 
 def main():
     _ensure_utf8_encoding()
