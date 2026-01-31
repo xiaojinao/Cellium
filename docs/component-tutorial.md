@@ -138,6 +138,13 @@ def _cmd_update(self, data: dict):
 | 数组 | JSON 序列化 | `list` 类型 |
 
 > 💡 **自动解析规则**：核心层 `MessageHandler` 会自动识别 Args 是否以 `{` 或 `[` 开头，若是则尝试解析为 JSON。组件的 `execute` 方法会收到解析后的对象（dict/list），而非原始字符串。
+>
+> **解析逻辑：**
+> - 以 `{` 开头 → 尝试解析为 `dict`
+> - 以 `[` 开头 → 尝试解析为 `list`
+> - 其他情况 → 保持原始字符串
+>
+> **注意**：JSON 解析失败时会回退到原始字符串，不会抛出异常。
 
 ### 自动 JSON 解析示例
 
@@ -201,10 +208,30 @@ class Greeter(BaseCell):
 
 Cellium 推荐使用 `BaseCell` 作为组件基类，它已经实现了 `ICell` 接口的核心逻辑：
 
-**BaseCell 自动处理：**
+### 命令方法命名规则
+
+所有可被前端调用的命令方法必须以 `_cmd_` 开头：
+
+```python
+def _cmd_greet(self, text: str = "") -> str:
+    """添加问候后缀，例如: greeter:greet:你好"""
+    return f"{text} Hallo Cellium"
+```
+
+**命名规则：**
+- 方法名格式：`_cmd_<命令名>`
+- 前端调用格式：`组件名:命令名:参数`
+- 示例：`_cmd_greet` → 前端调用 `greeter:greet:你好`
+
+**文档字符串作用：**
+- 方法的 docstring 会自动作为 `get_commands()` 返回的命令说明
+- 建议格式：`"命令描述，例如: 组件名:命令名:示例参数"`
+
+### BaseCell 自动处理
+
 - `execute`：自动将命令映射到 `_cmd_` 前缀的方法
 - `get_commands`：自动扫描 `_cmd_` 方法的文档字符串
-- `cell_name`：默认为类名的小写形式
+- `cell_name`：默认为类名的小写形式（如 `Greeter` → `greeter`）
 - 事件注册：自动调用 `register_component_handlers()`
 
 | 特性 | 说明 |
