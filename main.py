@@ -2,7 +2,6 @@
 """
 应用程序主入口
 """
-import sys
 
 from app.core import MainWindow, setup_di_container
 from app.core.util import load_components
@@ -10,7 +9,6 @@ from app.core.di.container import get_container
 from app.core.util.logger import setup_logger
 
 def main():
-    _ensure_utf8_encoding()
     # 日志级别: DEBUG, INFO, WARNING, ERROR
     setup_logger("app", level="DEBUG")
     setup_di_container()
