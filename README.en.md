@@ -49,6 +49,9 @@ Using a sophisticated micro-kernel (Core) as the central orchestrator, Cellium a
 | Electron | Medium | High | High |
 | **Cellium** | **Low** | **High** | **High** |
 
+**Example Application:**
+- [Cellium-Serial](https://github.com/xiaojinao/Cellium-Serial) - A serial communication tool built with Cellium framework, packaged size only **28MB**
+
 **Quick Example:**
 ```python
 # app/components/greeter.py

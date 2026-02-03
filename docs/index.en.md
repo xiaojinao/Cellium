@@ -33,11 +33,29 @@ Using a sophisticated micro-kernel (Core) as the central orchestrator, Cellium a
 | Electron | Medium | High | High |
 | **Cellium** | **Low** | **High** | **High** |
 
+**Example Application:**
+- [Cellium-Serial](https://github.com/xiaojinao/Cellium-Serial) - A serial communication tool built with Cellium framework, packaged size only **28MB**
+
 **Quick Example:**
 ```python
 # app/components/greeter.py
-class Greeter(ICell):
+from app.core.interface.base_cell import BaseCell
+
+
+class Greeter(BaseCell):
+    """Greeting component: adds suffix to input text"""
+
+    @property
+    def cell_name(self) -> str:
+        return "greeter"
+
+    def get_commands(self) -> dict:
+        return {"greet": "Add greeting suffix, e.g., greeter:greet:Hello"}
+
     def _cmd_greet(self, text: str = "") -> str:
+        """Add Hallo Cellium suffix"""
+        if not text:
+            return "Hallo Cellium"
         return f"{text} Hallo Cellium"
 ```
 

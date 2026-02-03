@@ -51,6 +51,9 @@
 | Electron | 中 | 高 | 高 |
 | **Cellium** | **低** | **高** | **高** |
 
+**示例应用：**
+- [Cellium-Serial](https://github.com/xiaojinao/Cellium-Serial) - 基于 Cellium 框架开发的串口通信工具，打包体积仅 **28MB**
+
 **快速示例：**
 ```python
 # app/components/greeter.py
