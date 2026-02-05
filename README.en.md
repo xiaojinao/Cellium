@@ -1062,25 +1062,13 @@ enabled_components:
 
 ### Auto-Discovery
 
-Cellium supports two component loading methods:
-
-**1. Configuration Loading (Current Default)**
+### Component Configuration
 
 Explicitly declare components to load in the configuration file:
 
 ```yaml
 enabled_components:
   - app.components.calculator.Calculator
-```
-
-**2. Auto-Discovery (Optional)**
-
-Configure automatic scanning of the `app/components/` directory to discover and load all ICell implementations:
-
-```yaml
-auto_discover: true
-scan_paths:
-  - app.components
 ```
 
 ## Quick Start

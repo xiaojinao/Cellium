@@ -973,31 +973,15 @@ window.mbQuery(0, 'mycell:greet:Cellium', function(customMsg, response) {
 # config/settings.yaml
 enabled_components:
   - app.components.calculator.Calculator
-  - app.components.filemanager.FileManager
-  # - app.components.debug.DebugTool  <-- 注释则不加载
-```
-
-### 自动发现
-
-Cellium 支持两种组件加载方式：
-
-**1. 配置加载（当前默认）**
+  ### 组件配置
 
 在配置文件中显式声明要加载的组件：
 
 ```yaml
 enabled_components:
   - app.components.calculator.Calculator
-```
-
-**2. 自动扫描（可选）**
-
-配置自动扫描 `app/components/` 目录，发现并加载所有 ICell 实现：
-
-```yaml
-auto_discover: true
-scan_paths:
-  - app.components
+  - app.components.filemanager.FileManager
+  # - app.components.debug.DebugTool  <-- 注释则不加载
 ```
 
 ## 快速开始
