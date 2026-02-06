@@ -535,11 +535,11 @@ class MainWindow:
         user32.PostQuitMessage(0)
     
     def load_html_with_buttons(self):
-        """加载包含计算器和标题栏的 HTML 页面 - Google 风格"""
+        """加载主 HTML 页面"""
         try:
             with open(self.html_path, 'r', encoding='utf-8') as f:
                 html = f.read()
-            logger.info("HTML 按钮已加载")
+            logger.info("HTML 页面已加载")
         except Exception as e:
             logger.error(f"加载 HTML 文件失败: {e}")
             return False
