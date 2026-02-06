@@ -252,18 +252,10 @@ class MainWindow:
     def __init__(self):
         self.project_root = _get_project_root()
         
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-            self.dll_dir = str(self.project_root / "dll")
-            self.font_dir = str(self.project_root / "font")
-            self.dll_path = str(self.project_root / "dll" / "mb132_x64.dll")
-            self.html_dir = str(self.project_root / "html")
-            self.html_path = str(self.project_root / "html" / "index.html")
-        else:
-            self.dll_dir = str(self.project_root / "dll")
-            self.dll_path = str(self.project_root / "dll" / "mb132_x64.dll")
-            self.font_dir = str(self.project_root / "font")
-            self.html_dir = str(self.project_root / "html")
-            self.html_path = str(self.project_root / "html" / "index.html")
+        self.dll_dir = str(self.project_root / "dll")
+        self.dll_path = str(self.project_root / "dll" / "mb132_x64.dll")
+        self.html_dir = str(self.project_root / "html")
+        self.html_path = str(self.project_root / "html" / "index.html")
         self.lib = None
         self.webview = None
         self.hwnd = None
