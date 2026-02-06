@@ -16,6 +16,10 @@ class BaseCell(ICell, metaclass=AutoInjectMeta):
     COMMAND_PREFIX = "_cmd_"
     
     def __init__(self):
+        pass
+    
+    def on_load(self):
+        """组件加载后调用，用于注册事件处理器"""
         register_component_handlers(self)
     
     @property

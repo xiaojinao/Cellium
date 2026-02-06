@@ -27,9 +27,8 @@ _executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="cell-")
 
 
 class MessageHandler:
-    def __init__(self, hwnd, calculator=None):
+    def __init__(self, hwnd):
         self.hwnd = hwnd
-        self.calculator = calculator
         self._titlebar_handler = TitleBarHandler(hwnd)
         
         event_bus.subscribe(EventType.ALERT, self._on_alert_message)
@@ -157,16 +156,20 @@ class MessageHandler:
             return f"Error: {str(e)}"
     
     def _on_alert_message(self, event: AlertEvent):
-        """处理 Alert 消息"""
+        """处理 Alert 消息
+        
+        统一命令格式：组件名:命令:参数
+        """
         msg_str = event.message
-        if msg_str.startswith("__CALC_RESULT__:"):
-            result = msg_str[len("__CALC_RESULT__"):]
-            self._handle_calc_result(result)
-        elif msg_str and ':' in msg_str:
-            result = self._handle_cell_command(msg_str)
-            logger.info(f"[INFO] 命令执行结果: {result}")
-        elif msg_str:
-            self._on_python_command(msg_str)
+        if not msg_str:
+            return
+        
+        if ':' not in msg_str:
+            logger.warning(f"[WARN] 无法解析消息: {msg_str}")
+            return
+        
+        result = self._handle_cell_command(msg_str)
+        logger.info(f"[INFO] 执行结果: {result}")
     
     def _on_jsquery_message(self, event: JsQueryEvent):
         """处理 JsQuery 消息
@@ -183,25 +186,22 @@ class MessageHandler:
     def _on_python_command(self, command):
         """处理来自 JavaScript 的命令
         
-        优先使用统一命令格式：组件名:命令:参数
+        统一命令格式：组件名:命令:参数
         """
-        logger.info(f"[INFO] 收到 Python 命令: {command}")
+        logger.info(f"[INFO] 收到命令: {command}")
         
-        if ':' in command:
-            cell_name, cmd, args = self._parse_cell_command(command)
-            if cell_name and self.get_cell(cell_name):
+        if ':' not in command:
+            logger.warning(f"[WARN] 无法解析命令: {command}")
+            return
+        
+        cell_name, cmd, args = self._parse_cell_command(command)
+        if cell_name:
+            cell = self.get_cell(cell_name)
+            if cell:
                 result = self._handle_cell_command(command)
-                logger.info(f"[INFO] 命令执行结果: {result}")
-                return
-        
-        if command.startswith("calc:"):
-            expression = command[5:]
-            if self.calculator:
-                result = self.calculator.calculate(expression)
-                self.calculator.show_result(result)
-    
-    def _handle_calc_result(self, result):
-        """处理计算结果"""
-        if self.calculator:
-            self.calculator.handle_calc_result(result)
+                logger.info(f"[INFO] 执行结果: {result}")
+            else:
+                logger.warning(f"[WARN] 组件不存在: {cell_name}")
+        else:
+            logger.warning(f"[WARN] 无法解析命令格式: {command}")
 

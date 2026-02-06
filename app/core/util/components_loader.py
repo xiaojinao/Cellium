@@ -122,6 +122,9 @@ def load_components(container: DIContainer, debug: bool = False) -> Dict[str, An
             
             if hasattr(instance, 'cell_name') and hasattr(instance, 'execute'):
                 register_cell(instance)
+                if hasattr(instance, 'on_load'):
+                    logger.debug(f"[DEBUG] 调用 on_load() for {component_name}")
+                    instance.on_load()
                 logger.info(f"已加载组件: {component_name} (cell_name: {instance.cell_name})")
             else:
                 logger.info(f"已加载组件: {component_name}")

@@ -269,11 +269,6 @@ class MainWindow:
         self.app_icon = None
         
         self.calculator = None
-        self.message_handler = None
-        
-        # 静态文件服务器
-        self._static_server = None
-        self._html_url = None
     
     def _get_component(self, component_type):
         """从 DI 容器获取组件
@@ -480,11 +475,6 @@ class MainWindow:
             traceback.print_exc()
             return False
     
-    def _handle_calc_result(self, result):
-        """处理计算结果"""
-        if self.calculator:
-            self.calculator.handle_calc_result(result)
-    
     def fade_out(self, duration=300):
         """淡出动画效果
         
@@ -612,7 +602,7 @@ class MainWindow:
         self.bridge = MiniBlinkBridge(self)
         
         # 初始化消息处理器组件
-        self.message_handler = MessageHandler(self.hwnd, None)
+        self.message_handler = MessageHandler(self.hwnd)
         
         # 订阅事件
         event_bus.subscribe(EventType.FADE_OUT, self._on_fade_out)

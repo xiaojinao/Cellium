@@ -288,16 +288,17 @@ def get_event_namespace() -> str:
 def event(event_type: str, priority: int = EventPriority.NORMAL):
     def decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+        def wrapper(event_name, *args, **kwargs):
+            return func(event_name, *args, **kwargs)
         
         full_event_type = event_type
         if _EVENT_NAMESPACE and not event_type.startswith(_EVENT_NAMESPACE + "."):
             full_event_type = f"{_EVENT_NAMESPACE}.{event_type}"
         
+        handler_key = (func.__qualname__, func.__module__)
         if full_event_type not in _EVENT_HANDLERS_REGISTRY:
             _EVENT_HANDLERS_REGISTRY[full_event_type] = set()
-        _EVENT_HANDLERS_REGISTRY[full_event_type].add((wrapper, priority))
+        _EVENT_HANDLERS_REGISTRY[full_event_type].add((wrapper, priority, handler_key))
         logger.debug(f"[EVENT] 已注册事件处理器: {full_event_type} (优先级: {priority}) -> {func.__name__}")
         return wrapper
     return decorator
@@ -306,8 +307,8 @@ def event(event_type: str, priority: int = EventPriority.NORMAL):
 def event_once(event_type: str, priority: int = EventPriority.NORMAL):
     def decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+        def wrapper(event_name, *args, **kwargs):
+            return func(event_name, *args, **kwargs)
         
         full_event_type = event_type
         if _EVENT_NAMESPACE and not event_type.startswith(_EVENT_NAMESPACE + "."):
@@ -324,8 +325,8 @@ def event_once(event_type: str, priority: int = EventPriority.NORMAL):
 def event_pattern(pattern: str, priority: int = EventPriority.NORMAL):
     def decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+        def wrapper(event_name, *args, **kwargs):
+            return func(event_name, *args, **kwargs)
         
         if not hasattr(wrapper, '_event_patterns'):
             wrapper._event_patterns = []
@@ -386,19 +387,28 @@ def subscribe_once_dynamic(event_type: str, handler: Callable):
 
 
 def register_component_handlers(component_instance: Any):
+    component_name = type(component_instance).__name__
+    
+    if not hasattr(register_component_handlers, '_registered'):
+        register_component_handlers._registered = set()
+    
+    if component_name in register_component_handlers._registered:
+        logger.warning(f"[WARN] {component_name} 已经注册过事件处理器，跳过")
+        return
+    
+    register_component_handlers._registered.add(component_name)
+    
     for event_type, handlers in _EVENT_HANDLERS_REGISTRY.items():
-        for handler, priority in handlers:
-            if inspect.ismethod(handler) and hasattr(handler, '__self__'):
-                event_bus.subscribe(event_type, handler, priority)
-            else:
-                try:
-                    bound_handler = handler.__get__(component_instance, type(component_instance))
-                    if inspect.ismethod(bound_handler) and hasattr(bound_handler, '__self__') and hasattr(handler, '__self__') and handler.__self__ is bound_handler.__self__:
-                        bound_handler = handler
-                except (AttributeError, TypeError):
-                    bound_handler = handler
+        for handler, priority, handler_key in handlers:
+            handler_class = handler_key[0].split('.')[0]
+            handler_module = handler_key[1]
+            component_class = type(component_instance).__name__
+            component_module = component_instance.__class__.__module__
+            
+            if handler_class == component_class and handler_module == component_module:
+                bound_handler = handler.__get__(component_instance, type(component_instance))
                 event_bus.subscribe(event_type, bound_handler, priority)
-            logger.debug(f"[EVENT] 自动注册处理器: {event_type} -> {handler.__name__}")
+                logger.debug(f"[EVENT] 订阅处理器: {event_type} -> {handler_key[0]}")
     
     for event_type, handlers in _ONCE_HANDLERS_REGISTRY.items():
         for handler, priority in handlers:
